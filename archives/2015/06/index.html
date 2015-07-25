@@ -1,0 +1,350 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>彙整：2015/6 | Pages of Ply_py</title>
+  <meta name="author" content="Weihua Cheung">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Pages of Ply_py"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Pages of Ply_py" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Pages of Ply_py</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+<h2 class="archive-title">2015/6</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-06-27T02:35:04.000Z"><a href="/2015/06/27/GSoC-2015-Week5/">Jun 27 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/06/27/GSoC-2015-Week5/">GSoC 2015 Week5</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>It’s about the midterm evaluation. Things have been proceeding fine thus far. Like last year I’ve made a report and published <a href="https://talk.openmrs.org/t/gsoc-2015-openmrs-id-v2-1-platform-improvements-midterm-presentation/2261/7" target="_blank" rel="external">here</a>. It’s been kind of taxing to record it as my English isn’t very good and I haven’t fully recovered from pharyngitis. And sadly few days later, it got severer again… :/</p>
+<p>Besides the report, I’ve also mainly delivered:</p>
+<ul>
+<li>bug fixes for ID-89</li>
+<li>more work about ID-88</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-06-20T14:44:14.000Z"><a href="/2015/06/20/GSoC-2015-Week4/">Jun 20 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/06/20/GSoC-2015-Week4/">GSoC 2015 Week4</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>The biggest news for this week is that I’ve had my last final of this semster finished.</p>
+<p>Well… Not many works I’ve done due to dealing with those finals. However, as the good news suggests, I’ll have more time from now on to work on. Things will be better. The tough issue <a href="https://issues.openmrs.org/browse/ID-103" target="_blank" rel="external">ID-103</a> is still ahead of me.</p>
+<h3 id="Done">Done</h3><ul>
+<li><p>After lots of discussion… I’ve fixed this <a href="https://talk.openmrs.org/t/lots-of-ldap-errors-with-email-verification-process-in-past-few-days/1951" target="_blank" rel="external">LDAP issue</a> reported by Michael. Something related with LDAP was wrong, but I don’t know where it is. However, I’m pretty sure, it shouldn’t be Dashboard’s fault form the log file.</p>
+</li>
+<li><p>Discussed other issues and future works</p>
+</li>
+</ul>
+<h2 id="ToDo">ToDo</h2><ul>
+<li>ID-88, Replace MySQL legacy stuff.</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-06-13T08:08:29.000Z"><a href="/2015/06/13/GSoC-2015-Week3/">Jun 13 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/06/13/GSoC-2015-Week3/">GSoC 2015 Week3</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Another week of exam…</p>
+<p>I’ve mainly done two things this week, finishing ID-89 and ID-102.</p>
+<p>There is not much to talk about ID-102, just deleting and replacing… For ID-89, refactoring <code>ldap.js</code>, It’s been a long time that I noticed that operations related with <code>ldap.js</code> would be much slower than the ordinary. After checking the search operations, I found that the old one will use search which has <code>baseDN</code> of <code>ou=users,dc=openmrs,dc=org</code> and a filter of <code>uid=USERNAME</code>. Then inspired by intuition, I realized that LDAP server may highly possible first fetch all entries under <code>baseDN</code> and then use that filter to select the items. This would be intolerant in production, as we can directly find the entry via <code>DN</code> of <code>uid=USERNAME,ou=users,dc=openmrs,dc=org</code>.</p>
+<p>After performing a little experimentation on my machine and proving that search with direct <code>DN</code> would be 1 times more faster than with <code>filter</code>. I rewrote all the operations in the new ldap.js. Hence, this time, the refactor doesn’t only focus on logic flow and readabilities, but also efficiency.</p>
+<h2 id="TODO_for_Next_Week">TODO for Next Week</h2><ul>
+<li>ES6 investigation</li>
+<li>Something else interesting</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-06-06T14:24:44.000Z"><a href="/2015/06/06/GSoC-2015-Week2/">Jun 6 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/06/06/GSoC-2015-Week2/">GSoC 2015 Week2</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Well… Exam period is coming… For the sake of GPA, I have to spend lots of time on reviewing. Hence, commits were getting less.</p>
+<p>However, goodnews is that the midterm goals are kind of easier compared to those final, and I’ve finished a lot. Currently I’m working on managing front-end dependencies by <a href="bower.io">Bower</a>, which is a npm-like package management tools. Though the task itself is rather easy, all I need to do is find the referrence and replace it, some parts of codebase of Dashboard are kind of aged with lots of deprecated code and dependencies that sometimes will confuse developer, namely me for now. So besides adorpting Bower, I’m also reviewing our code-base to filter out-dated parts which would make things easier in the future. That’s work related with <a href="https://issues.openmrs.org/browse/ID-102" target="_blank" rel="external">ID-102</a></p>
+<p>Also, I’ve been working on <a href="https://issues.openmrs.org/browse/ID-89" target="_blank" rel="external">ID-89</a> as well which aims to refactor <code>ldap.js</code> and add tests.</p>
+<p>To summarize:</p>
+<h2 id="Done:">Done:</h2><ul>
+<li>Reviewed some parts of Dashboard front-end thing.</li>
+<li>Refactored <code>ldap.js</code> and added some tests for it.</li>
+</ul>
+<h2 id="ToDo">ToDo</h2><ul>
+<li>Finish these tasks: ID-102 and ID-89.</li>
+<li>See what I can achieve with ES6.</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜尋">
+    <input type="hidden" name="q" value="site:pages.plypy.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分類</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Fun/">Fun</a><small>1</small></li>
+  
+    <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
+  
+    <li><a href="/categories/algorithm/">algorithm</a><small>1</small></li>
+  
+    <li><a href="/categories/life/">life</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">標籤</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/CF/">CF</a><small>1</small></li>
+  
+    <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>2</small></li>
+  
+    <li><a href="/tags/Mongoose/">Mongoose</a><small>1</small></li>
+  
+    <li><a href="/tags/Node-js/">Node.js</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenLDAP/">OpenLDAP</a><small>1</small></li>
+  
+    <li><a href="/tags/Shithole/">Shithole</a><small>1</small></li>
+  
+    <li><a href="/tags/Test/">Test</a><small>1</small></li>
+  
+    <li><a href="/tags/VHDL/">VHDL</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+  
+    <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
+  
+    <li><a href="/tags/auth/">auth</a><small>1</small></li>
+  
+    <li><a href="/tags/editorial/">editorial</a><small>1</small></li>
+  
+    <li><a href="/tags/emacs/">emacs</a><small>1</small></li>
+  
+    <li><a href="/tags/exports/">exports</a><small>1</small></li>
+  
+    <li><a href="/tags/fork/">fork</a><small>1</small></li>
+  
+    <li><a href="/tags/games/">games</a><small>1</small></li>
+  
+    <li><a href="/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="/tags/linux/">linux</a><small>1</small></li>
+  
+    <li><a href="/tags/network/">network</a><small>1</small></li>
+  
+    <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
+  
+    <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
+  
+    <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Weihua Cheung
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plypy';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>fork | Pages of Ply_py</title>
+  <meta name="author" content="Weihua Cheung">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Pages of Ply_py"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Pages of Ply_py" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Pages of Ply_py</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+<h2 class="archive-title tag">fork</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-12-12T13:02:04.000Z"><a href="/2014/12/12/OSLAB-notes-2/">Dec 12 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/12/12/OSLAB-notes-2/">OSLAB notes 2</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>This time, we are asked to play with the <code>fork()</code>, <code>signal()</code>, <code>kill()</code> and some other POSIX APIs related with process control and communication.</p>
+<h2 id="Fork_and_pass_signal">Fork and pass signal</h2><p>The first task is to use <code>fork</code> to create 2 child-processes and then use soft interrupt (signal) to make interprocess communication.</p>
+<h3 id="Fork">Fork</h3><p>Well, first of all you need to create 2 child-processes. And how to achieve that, this?
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pid1 = fork();</span><br><span class="line">pid2 = fork();</span><br></pre></td></tr></table></figure></p>
+<p>Well, young man, you’re simply naiveeee.</p>
+<p>Before making further explanation, you’d better run this code yourself.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pid_t</span> pid1, pid2;</span><br><span class="line">pid1 = fork();</span><br><span class="line">pid2 = fork();</span><br><span class="line"><span class="built_in">printf</span>(<span class="string">"The father %d created, pid1: %d \t pid2: %d\n"</span>, getpid(), pid1, pid2);</span><br></pre></td></tr></table></figure>
+<p>The output goes like this,</p>
+<pre><code>The father <span class="number">6281</span> created, <span class="string">pid1:</span> <span class="number">6282</span>     <span class="string">pid2:</span> <span class="number">6283</span>
+The father <span class="number">6282</span> created, <span class="string">pid1:</span> <span class="number">0</span>        <span class="string">pid2:</span> <span class="number">6284</span>
+The father <span class="number">6284</span> created, <span class="string">pid1:</span> <span class="number">0</span>        <span class="string">pid2:</span> <span class="number">0</span>
+The father <span class="number">6283</span> created, <span class="string">pid1:</span> <span class="number">6282</span>     <span class="string">pid2:</span> <span class="number">0</span>
+</code></pre><p>Strange, huh? There is 4 processes created, rather than 3 that we expected; and the child process 6282 has also created one process 6284.</p>
+<p>Well, let’s explain this. The <code>fork</code> will create a duplicate of the running process, and the process created will be the child of the original process. Since the child is a replica, it will have the same local variables ,same PC(program counter) and a bunch of other stuff you may see its <a href="http://man7.org/linux/man-pages/man2/fork.2.html" target="_blank" rel="external">man page</a> for details.</p>
+<p>See the child and the parent processes are almost identical, the child will have the same PC as the parent’s, which means, it will continue to execute the code after where <code>fork</code> is called. And that is the reason of the “wrong” behavior we have above. The execution flow goes like this.</p>
+<hr>
+<ol>
+<li>Parent 6281 created child 6282, then 6281 &amp; 6282 will continue to execute <code>pid2 = fork()</code></li>
+<li>6281 created another child 6283, while child 6282 also created one child of its own, 6284.</li>
+</ol>
+<hr>
+<p>Then how shall we distinguish the child and the parent? Notice that some pids are 0. After <code>fork</code> returned the child and the parent will receive 2 different value. The parent will get the pid of its child, meanwhile the child will have a 0. Also -1 for failed duplicate. And we can work on that.</p>
+<h3 id="Signal_and_Kill">Signal and Kill</h3><p>In this task, we used software interrupt to achieve interprocess communication.
+That is, one process listen for a specific signal (interrupt) and then the other one send that signal. These are done by <code>signal</code> and <code>kill</code> respectively.</p>
+<p>The <code>signal(signum, handler)</code> will bind the specified signal with id <code>signum</code> with the handler function <code>handler</code>. And <code>kill(pid, sig)</code> will send signal <code>sig</code> to process <code>pid</code>.</p>
+<h3 id="Design">Design</h3><p>Then everything is simple, as the task asked us to let the parent listen for keyboard interrupt and then send signal to kill the children. We shall simply let the parent listen to the <code>SIGINT</code>, and then bind a handler function that will send signals to the 2 children, the children then wait for the signals to commit suicide.</p>
+<p>However, there are few things to note.</p>
+<h3 id="Notes">Notes</h3><p>The guide provided is… well, it made few mistakes. Only on some specific OS the <code>break</code> and <code>delete</code> will generate the <code>SIGINT</code>, mostly it’s for <code>Ctrl+c</code>. And since we are using <code>SIGINT</code>, it’s vital to overwrite the orignal handler for it. Or it will cause the processes to terminate, though the outcome is same, it’s not what we want.</p>
+<p>All in all, it’s my code below.
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Author: Ply_py</span><br><span class="line"> * OSLAB: fork and signal passing</span><br><span class="line"> */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdio.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;signal.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;unistd.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;sys/types.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdlib.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">killer</span><span class="params">(<span class="keyword">int</span>)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">suicide</span><span class="params">(<span class="keyword">int</span>)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pid_t</span> pid1, pid2;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span></span><br><span class="line"><span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">int</span> *argv[])</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="comment">// make all process of this group ignore the normal soft interrupt</span></span><br><span class="line">    signal(SIGINT, SIG_IGN);</span><br><span class="line">    <span class="comment">// create child process 1</span></span><br><span class="line">    <span class="keyword">while</span> (-<span class="number">1</span> == (pid1 = fork())) <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (pid1 &gt; <span class="number">0</span>) &#123; <span class="comment">// parent</span></span><br><span class="line">        <span class="comment">// create child process 2</span></span><br><span class="line">        <span class="keyword">while</span> (-<span class="number">1</span> == (pid2 = fork())) <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (pid2 &gt; <span class="number">0</span>) &#123; <span class="comment">// parent</span></span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"Parent: %ld\t Child1: %ld\t Child2: %ld\n"</span>,</span><br><span class="line">                (<span class="keyword">long</span>) getpid(), (<span class="keyword">long</span>) pid1, (<span class="keyword">long</span>) pid2);</span><br><span class="line"></span><br><span class="line">            signal(SIGINT, killer);</span><br><span class="line">            <span class="comment">// wait for death of 2 children</span></span><br><span class="line">            wait(<span class="number">0</span>);</span><br><span class="line">            wait(<span class="number">0</span>);</span><br><span class="line">            <span class="built_in">puts</span>(<span class="string">"The parent has killed his children"</span>);</span><br><span class="line">            <span class="built_in">exit</span>(EXIT_SUCCESS);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123; <span class="comment">// child 2</span></span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"child 2: %ld created\n"</span>, (<span class="keyword">long</span>) getpid());</span><br><span class="line">            signal(<span class="number">16</span>, suicide);</span><br><span class="line">            <span class="keyword">while</span> (<span class="number">1</span>) sleep(<span class="number">5</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123; <span class="comment">// child 1</span></span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"child 1: %ld created\n"</span>, (<span class="keyword">long</span>) getpid());</span><br><span class="line">        signal(<span class="number">17</span>, suicide);</span><br><span class="line">        <span class="keyword">while</span> (<span class="number">1</span>) sleep(<span class="number">5</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"I, %ld can get here\n"</span>, (<span class="keyword">long</span>) getpid());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span></span><br><span class="line"><span class="title">killer</span><span class="params">(<span class="keyword">int</span> signum)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">static</span> counter = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"process %ld catching signal %d\n"</span>, (<span class="keyword">long</span>) getpid(), signum);</span><br><span class="line">    <span class="keyword">if</span> (<span class="number">0</span> == counter) &#123;</span><br><span class="line">        kill(pid1, <span class="number">17</span>); <span class="comment">// kill child 1</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        kill(pid2, <span class="number">16</span>); <span class="comment">// kill child 2</span></span><br><span class="line">    &#125;</span><br><span class="line">    ++counter;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span></span><br><span class="line"><span class="title">suicide</span><span class="params">(<span class="keyword">int</span> signum)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"Process %ld is committing suicide, by signal %d\n"</span>,</span><br><span class="line">        (<span class="keyword">long</span>) getpid(), signum);</span><br><span class="line">    <span class="built_in">exit</span>(EXIT_SUCCESS);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="Pipe">Pipe</h2><p>The task 2 demand us to implement another interprocess communication via <code>pipe</code>.</p>
+<p>Well it’s rather easy, as we already got here. Use <a href="http://man7.org/linux/man-pages/man2/pipe.2.html" target="_blank" rel="external">pipe</a> to create a communication tunnel, and use that to pass messages. But notice there are 2 process writing to that pipe concurently, so proper lock is needed. Check <a href="http://man7.org/linux/man-pages/man3/lockf.3.html" target="_blank" rel="external">lockf</a>.</p>
+<p>Code here,</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Author: Ply_py</span><br><span class="line"> * OSLAB: pipe</span><br><span class="line"> */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;unistd.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;signal.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdio.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdlib.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="preprocessor">#<span class="keyword">define</span> BUF_SIZE 105</span></span><br><span class="line"><span class="keyword">pid_t</span> pid1,pid2;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span></span><br><span class="line"><span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> fd[<span class="number">2</span>];</span><br><span class="line">    <span class="comment">// fd[0] dest, fd[1] source</span></span><br><span class="line">    <span class="keyword">char</span> in_buf[BUF_SIZE];</span><br><span class="line">    <span class="keyword">char</span> out_buf[BUF_SIZE];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (-<span class="number">1</span> == pipe(fd)) &#123;</span><br><span class="line">        perror(<span class="string">"pipe"</span>);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (-<span class="number">1</span> == (pid1 = fork())) <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="number">0</span> == pid1) &#123;<span class="comment">//child1</span></span><br><span class="line">        lockf(fd[<span class="number">1</span>], F_LOCK, <span class="number">0</span>);</span><br><span class="line">        <span class="built_in">sprintf</span>(out_buf, <span class="string">"\nChild process 1 is sending a message\n"</span>);</span><br><span class="line">        write(fd[<span class="number">1</span>], out_buf, BUF_SIZE);</span><br><span class="line">        lockf(fd[<span class="number">1</span>], F_ULOCK, <span class="number">0</span>);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_SUCCESS);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">while</span> (-<span class="number">1</span> == (pid2 = fork())) <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (<span class="number">0</span> == pid2) &#123;<span class="comment">// child2</span></span><br><span class="line">            lockf(fd[<span class="number">1</span>], F_LOCK, <span class="number">0</span>);</span><br><span class="line">            <span class="built_in">sprintf</span>(out_buf, <span class="string">"\nChild process 2 is sending a message\n"</span>);</span><br><span class="line">            write(fd[<span class="number">1</span>], out_buf, BUF_SIZE);</span><br><span class="line">            lockf(fd[<span class="number">1</span>], F_ULOCK, <span class="number">0</span>);</span><br><span class="line">            <span class="built_in">exit</span>(EXIT_SUCCESS);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123; <span class="comment">// parent</span></span><br><span class="line">            read(fd[<span class="number">0</span>], in_buf, BUF_SIZE);</span><br><span class="line">            <span class="built_in">puts</span>(in_buf);</span><br><span class="line">            wait(pid1);</span><br><span class="line">            read(fd[<span class="number">0</span>], in_buf, BUF_SIZE);</span><br><span class="line">            <span class="built_in">puts</span>(in_buf);</span><br><span class="line">            wait(pid2);</span><br><span class="line">            <span class="built_in">exit</span>(EXIT_SUCCESS);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜尋">
+    <input type="hidden" name="q" value="site:pages.plypy.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分類</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Fun/">Fun</a><small>1</small></li>
+  
+    <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
+  
+    <li><a href="/categories/algorithm/">algorithm</a><small>1</small></li>
+  
+    <li><a href="/categories/life/">life</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">標籤</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/CF/">CF</a><small>1</small></li>
+  
+    <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>2</small></li>
+  
+    <li><a href="/tags/Mongoose/">Mongoose</a><small>1</small></li>
+  
+    <li><a href="/tags/Node-js/">Node.js</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenLDAP/">OpenLDAP</a><small>1</small></li>
+  
+    <li><a href="/tags/Shithole/">Shithole</a><small>1</small></li>
+  
+    <li><a href="/tags/Test/">Test</a><small>1</small></li>
+  
+    <li><a href="/tags/VHDL/">VHDL</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+  
+    <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
+  
+    <li><a href="/tags/auth/">auth</a><small>1</small></li>
+  
+    <li><a href="/tags/editorial/">editorial</a><small>1</small></li>
+  
+    <li><a href="/tags/emacs/">emacs</a><small>1</small></li>
+  
+    <li><a href="/tags/exports/">exports</a><small>1</small></li>
+  
+    <li><a href="/tags/fork/">fork</a><small>1</small></li>
+  
+    <li><a href="/tags/games/">games</a><small>1</small></li>
+  
+    <li><a href="/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="/tags/linux/">linux</a><small>1</small></li>
+  
+    <li><a href="/tags/network/">network</a><small>1</small></li>
+  
+    <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
+  
+    <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
+  
+    <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Weihua Cheung
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plypy';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

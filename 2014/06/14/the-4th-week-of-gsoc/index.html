@@ -1,0 +1,282 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>The 4th Week of GSoC | Pages of Ply_py</title>
+  <meta name="author" content="Weihua Cheung">
+  
+  <meta name="description" content="Let’s sum up the 4th week of GSoC!!! 
+First, another hard one, I’ve used a lot of time to fix bug of some async logic. :/
+What I Have Done
+Roughly fin">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="The 4th Week of GSoC"/>
+  <meta property="og:site_name" content="Pages of Ply_py"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Pages of Ply_py" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Pages of Ply_py</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-06-14T11:56:26.000Z"><a href="/2014/06/14/the-4th-week-of-gsoc/">Jun 14 2014</a></time>
+      
+      
+  
+    <h1 class="title">The 4th Week of GSoC</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Let’s sum up the 4th week of GSoC!!! </p>
+<p>First, another hard one, I’ve used a lot of time to fix bug of some async logic. :/</p>
+<h3 id="What_I_Have_Done">What I Have Done</h3><ol>
+<li><p>Roughly finished the work of integrating the new Mongo<em> data model with the signup module. Now you can create new account in Mongo</em>, but you can’t log in yet…</p>
+</li>
+<li><p>Fixed the <a href="https://issues.openmrs.org/browse/ID-6" target="_blank" rel="external">ID-6</a>. Small defect about the login hint message, easy to fix, just adding a link will be fine. But I think there is still some room for improvement. Maybe when user filled out the form, they can be redirected to the original page. Or simply make it default to open a new page for that link, since there is still the verification work.</p>
+</li>
+<li><p>Fixed the <a href="https://issues.openmrs.org/browse/ID-14" target="_blank" rel="external">ID-14</a>, which is about the verification email. The old dashboard will sent the verification email, even if the account isn’t got created. This can be easily solved by using <a href="https://github.com/caolan/async" target="_blank" rel="external">async</a> library. Just simply using <a href="https://github.com/caolan/async#seriestasks-callback" target="_blank" rel="external">async.series()</a> will do the trick.</p>
+</li>
+<li><p>Reimplemented the validation middleware for signup module. Again, by using <a href="https://github.com/caolan/async" target="_blank" rel="external">async</a>, the whole control flow is clearer now. I’ve spent most of my time on that, because I made some rookie mistakes on writing async code in Node.js.</p>
+</li>
+<li><p>Created and fixed the <a href="https://issues.openmrs.org/browse/ID-29" target="_blank" rel="external">ID-29</a>. This issue is about the reuse of typed values of validation form. If the user typed some wrong values, the old dashboard won’t cache them, so user have to type them again. Small bugs, but annoying.</p>
+</li>
+</ol>
+<h3 id="What_I_Will_Do">What I Will Do</h3><ol>
+<li><p>Complet the work of signup module, and march on auth(login logout) and profile module.</p>
+</li>
+<li><p>Continue improve the validation code.</p>
+</li>
+<li><p>Fix some more issues.</p>
+</li>
+<li><p>Test the Mongoose to see whether is possible for users to change the schema when the server is running. And whether that is a good idea… For details you can see this <a href="https://talk.openmrs.org/t/api-data-model-design-discussion-free-form-data/282" target="_blank" rel="external">talk</a> posted by Elliott.</p>
+</li>
+</ol>
+<p>That’s it.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/GSoC2014/">GSoC2014</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/GSoC2014/">GSoC2014</a>, <a href="/tags/Weekly-Blog/">Weekly-Blog</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">留言</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://pages.plypy.com/2014/06/14/the-4th-week-of-gsoc/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜尋">
+    <input type="hidden" name="q" value="site:pages.plypy.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分類</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Fun/">Fun</a><small>1</small></li>
+  
+    <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
+  
+    <li><a href="/categories/algorithm/">algorithm</a><small>1</small></li>
+  
+    <li><a href="/categories/life/">life</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">標籤</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/CF/">CF</a><small>1</small></li>
+  
+    <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>2</small></li>
+  
+    <li><a href="/tags/Mongoose/">Mongoose</a><small>1</small></li>
+  
+    <li><a href="/tags/Node-js/">Node.js</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenLDAP/">OpenLDAP</a><small>1</small></li>
+  
+    <li><a href="/tags/Shithole/">Shithole</a><small>1</small></li>
+  
+    <li><a href="/tags/Test/">Test</a><small>1</small></li>
+  
+    <li><a href="/tags/VHDL/">VHDL</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+  
+    <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
+  
+    <li><a href="/tags/auth/">auth</a><small>1</small></li>
+  
+    <li><a href="/tags/editorial/">editorial</a><small>1</small></li>
+  
+    <li><a href="/tags/emacs/">emacs</a><small>1</small></li>
+  
+    <li><a href="/tags/exports/">exports</a><small>1</small></li>
+  
+    <li><a href="/tags/fork/">fork</a><small>1</small></li>
+  
+    <li><a href="/tags/games/">games</a><small>1</small></li>
+  
+    <li><a href="/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="/tags/linux/">linux</a><small>1</small></li>
+  
+    <li><a href="/tags/network/">network</a><small>1</small></li>
+  
+    <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
+  
+    <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
+  
+    <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Weihua Cheung
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plypy';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,604 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>彙整：2014/5 | Pages of Ply_py</title>
+  <meta name="author" content="Weihua Cheung">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Pages of Ply_py"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Pages of Ply_py" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Pages of Ply_py</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+<h2 class="archive-title">2014/5</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-05-31T11:39:21.000Z"><a href="/2014/05/31/the-2nd-week-of-gsoc/">May 31 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/05/31/the-2nd-week-of-gsoc/">The 2nd Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>The second week has ended, another fun week, yeah!</p>
+<p>So let me sum it up.</p>
+<h2 id="What_I_Have_Done">What I Have Done</h2><h3 id="Refactoring">Refactoring</h3><p>Well, though in the last week I successfully rearranged the routing logic. When I tried to refactor other source files, I found it’s very hard, well almost impossible, to correctly refactor without any mistakes, when there is no tests.</p>
+<p>And considering these files will most probably be replaced, so I decided to suspend the refactoring work. So I just simply used JsFormat, one plugin of Sublime Text, to format those files. So they are more readable now. :D</p>
+<h3 id="Fixing_ID-12_&amp;_ID-22">Fixing ID-12 &amp; ID-22</h3><p>OpenMRS uses a lot of team-work stuff, like <a href="https://wiki.openmrs.org" target="_blank" rel="external">Wiki</a> and <a href="https://issues.openmrs.org" target="_blank" rel="external">Jira</a>. When people found some bugs or want to add some new functionalities, they can report it on Jira. And here is the categories for <a href="https://issues.openmrs.org/browse/ID" target="_blank" rel="external">ID-Dashboard</a>.</p>
+<p>When I worked on the refactoring, Elliott asked me to create a new issue on it, so we can publicly track my work, and let people comment on that issue. And by that chance I found there are a lot of issues lying there waiting for development.</p>
+<p>So I created my refactoring issue, <a href="https://issues.openmrs.org/browse/ID-22" target="_blank" rel="external">ID-22</a> and picked up <a href="https://issues.openmrs.org/browse/ID-12" target="_blank" rel="external">ID-12</a> and <a href="https://issues.openmrs.org/browse/ID-19" target="_blank" rel="external">ID-19</a>. Then successfully solved them.</p>
+<p>ID-19 is just a simple typo fix, and ID-12 is about the session creating problem.</p>
+<p>Elliott found that there are a lot extra sessions were created in database, and it blame to the global-navbar. Because the navbar was a sub module of the dashboard, and when other modules like Wiki want to use it, they could make a <code>get</code> request for <code>dashbordHOST/globalnav</code> and added it on themselves according to the response.</p>
+<p>And then due to faultily designed of Dashboard, it will create session for all requests, whether they are needed or not. Hence, not only the <code>/globalnav</code>, but also some thing like <code>/resource/*</code> will create sessions. That’s terrible, it will add unnecessary pressure to the DB.</p>
+<p>And so, I took a look into the sources, and found that, the real problem lies in the way of using <code>express.session</code> middleware. The source just directly used <code>app.use()</code> for it, this will make express to generate session for all routes. </p>
+<p>After some searching, I found the best practice maybe store the session middleware first, and then use it when necessary. But later I found it will be a huge modification, ‘cause there are other middlware depends on session and they are used globally as well. So instead, I simply created a exception list for the session middleware as a temporary fix.</p>
+<p>And in the process of solving this issue, Elliott told me that we can create a subApp for those submodules, and then let the main app use it. Like,</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> subApp = express.createServer();</span><br><span class="line"><span class="comment">// don't call subApp.listen</span></span><br><span class="line">subApp.get(<span class="string">'/some'</span>, <span class="function"><span class="keyword">function</span> (<span class="params">req, res, next</span>) </span>&#123;</span><br><span class="line">    <span class="comment">// do something    </span></span><br><span class="line">&#125;)</span><br><span class="line"><span class="comment">// do something else</span></span><br><span class="line">app.use(<span class="string">'/parentUri'</span>, subApp);</span><br></pre></td></tr></table></figure>
+<p>And now you can visit <code>/parentUri/some</code>.</p>
+<p>That is a very good feature that could make less coupling. However, note that the subApp works like a middleware. So it will be infulenced by other middleware that the main app used.</p>
+<h3 id="Starting_to_Dig_Mongoose">Starting to Dig Mongoose</h3><p>First, you need to configure MongoDB instance, and I did. The details are <a href="/2014/05/29/adding-users-for-mongodb/">here</a>.</p>
+<h2 id="What_I_Will_Do">What I Will Do</h2><ol>
+<li><p>Continue to configure the db stuff, and make a guide for that.</p>
+</li>
+<li><p>Starting to design the basic data model with Mongoose.</p>
+</li>
+<li><p>Begin to study the unit testing, like Mocha and Jasmine.</p>
+</li>
+<li><p>Fix more issues maybe.</p>
+</li>
+</ol>
+<p><strong>So that’s it, I need to do my laundry :&lt;</strong></p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-05-29T07:05:12.000Z"><a href="/2014/05/29/adding-users-for-mongodb/">May 29 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/05/29/adding-users-for-mongodb/">Adding Users for Mongodb</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Today after messing around with MongoDB for hours. I finally figured out one thing… adding a user with password for a specifc database of MongoDB. :&lt;</p>
+<p>So I better write a blog to note this down…</p>
+<p>My situation was simple, there is only one single instance. So I don’t need to touch those complex ‘replica set’ stuff.</p>
+<p>So, few things to note:</p>
+<p>First enable the auth mechanism, if you use the config file, modify it. By default, config lies in <code>/etc/mongod.conf</code>. Uncomment this line,</p>
+<pre><code><span class="setting">auth = <span class="value"><span class="keyword">true</span></span></span>
+</code></pre><p>Or you can start <code>mongod</code> with <code>--auth</code> option.</p>
+<p>Then use <code>mongo admin</code> to connect to server and switch to the <code>admin</code> database, in where you’ll create the Admin user, and use this admin user to create a user for our db.</p>
+<p>If you only want this user to have the minimum privileges to create other user. You can make its role as <code>userAdminAnyDatabase</code>;</p>
+<p>However, this role is very limited. So for development convenience, I used <code>root</code>. So the commands are,</p>
+<pre><code><span class="tag">mongo</span> <span class="tag">admin</span>
+
+<span class="tag">db</span><span class="class">.createUser</span>( <span class="rules">{
+    <span class="rule"><span class="attribute">user</span>:<span class="value"> <span class="string">'userNameHere'</span>,
+    pwd: <span class="string">'passwordHere'</span>,
+    roles: [
+        { role: <span class="string">'root'</span>, db: <span class="string">'admin'</span>}
+    ]
+})</span></span></span>
+</code></pre><p>If you got <code>db.createUser() is not a function</code>, please check your mongo’s version. This method was not introduced until 2.6. And you can use <code>db.addUser()</code> in previouse versions.</p>
+<p>Then switch to the database you want, and create another user with <code>readWrite</code> role. </p>
+<pre><code><span class="literal">use</span> yourDB
+
+db.<span class="keyword">createUser( {</span>
+    <span class="keyword">user</span>: <span class="string">'userNameHere'</span>,
+    pwd: <span class="string">'passwordHere'</span>,
+    <span class="literal">roles</span>: [
+        <span class="keyword">{</span> role: <span class="string">'readWrite'</span>, db: <span class="string">'yourDB'</span><span class="keyword">}</span>
+    ]
+<span class="keyword">}</span>)
+</code></pre><p>That’s it, by now you can use this user to connect mongo. You can test it by using <code>db.auth(&#39;username&#39;, &#39;password&#39;)</code></p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-05-26T17:35:55.000Z"><a href="/2014/05/27/difference-between-exports-and-moduleexports/">May 27 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/05/27/difference-between-exports-and-moduleexports/">Difference between &quot;exports&quot; and &quot;module.exports&quot;</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>In node, if we want to something to be acessible outside, we should export it by assigning it to an attribute of <code>exports</code> or <code>module.exports</code>.
+So we can use it by simply <code>require</code>ing it in other files.</p>
+<p>But, sometimes we want to use <code>require</code> like importing a function. Rookies might write something like these.
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">exports = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="comment">// something</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>But this approach will certainly fail. Actually if you want to <code>export</code> a function use <code>module.exports</code>, instead of <code>exports</code>.</p>
+<p>The reason lies in the implementation of Node’s module. In Node, every source file is a independent module. The <code>module</code> object definition is like below, we’ll just focus on <code>exports</code>.
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Module</span>(<span class="params">id, parent</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.id = id;</span><br><span class="line">    <span class="keyword">this</span>.exports = &#123;&#125;;</span><br><span class="line">    <span class="keyword">this</span>.parent = parent;</span><br><span class="line">    <span class="comment">// something else</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>And when Node compile your source file, it will wrap it first.
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">(<span class="function"><span class="keyword">function</span> (<span class="params">exports, require, module, __filename, __dirname</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// your codes</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure></p>
+<p>Then node will call this function and pass those parameters to it, so we can use them in our files. The <code>exports</code> is the shortcut for <code>module.exports</code>. So even if you reassign it a new value, the original object <code>module.exports</code> won’t be affected at all.</p>
+<h3 id="Conclusion">Conclusion</h3><p>In a nutshell <code>exports</code> is just a reference to <code>module.exports</code>, don’t assign it a new value. Instead use this.
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">exports = <span class="built_in">module</span>.exports = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="comment">//blahblah</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-05-24T07:24:21.000Z"><a href="/2014/05/24/the-first-week-of-gsoc/">May 24 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/05/24/the-first-week-of-gsoc/">The First Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>So ended the first week of GSoC2014. It’s been exciting and funny, though there is some exam pressure on me :/ </p>
+<h2 id="What_I_Have_Done">What I Have Done</h2><hr>
+<h3 id="Refactoring">Refactoring</h3><p>I’ve broken the routing strategies into small pieces of files. Instead of placing all routes in <code>app.js</code>, now each router is placed in its own files
+. E.G. <code>get(/login)</code> and <code>post(/login)</code> is placed under <code>login.js</code>. Above that there is an <code>index.js</code> requires all those files.</p>
+<p>Besides these files were put into different modules as well, different module handle different business, and they are independent from each other. I’m trying to keep to make everything a module. Nevertheless some basic router were kept by the main project.</p>
+<p>So now the whole are structure like these,
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">app.js                    # requires all modules specified <span class="keyword">in</span> conf.js, and the router folder</span><br><span class="line">routes</span><br><span class="line">| index.js                # requires router file</span><br><span class="line">| login.js    </span><br><span class="line">| logout.js  </span><br><span class="line">modules</span><br><span class="line">| index.js                # requires lib</span><br><span class="line">| lib                    </span><br><span class="line">| | index.js              # requires routes and controller</span><br><span class="line">| | routes                # organized <span class="keyword">as</span> the former one</span><br><span class="line">| | | ...</span><br></pre></td></tr></table></figure></p>
+<h3 id="Setteled_the_disagreement_on_code_style">Setteled the disagreement on code style</h3><p>We now officially adopted the <a href="http://nodeguide.com/style.html" target="_blank" rel="external">Felix’s</a> as the project’s code style standard. Due to some historical problems, there isn’t, at least for javascript, a code convention for OpenMRS. So maybe in the future, we’ll have our own formal code convention as well :D</p>
+<p>For the sake of efficiency. I’m now using <a href="https://sublime.wbond.net/packages/SublimeLinter" target="_blank" rel="external">SublimeLinter</a> to detect the potential problems and <a href="https://sublime.wbond.net/packages/JsFormat" target="_blank" rel="external">JsFormat</a> to format my code.</p>
+<p>However, in the process of refactoring, I had to be very very careful. Cause this project is somehow lack of unit testing. That’s to say, another to-do added on the list. Bonjour <a href="http://visionmedia.github.io/mocha/" target="_blank" rel="external">Mocha</a>.</p>
+<h2 id="What_I_Will_Do">What I Will Do</h2><hr>
+<p>I think I’ll stick to my old plan, thus:</p>
+<ol>
+<li>Continue the refactoring work, move different views into their respective modules.</li>
+<li>Clean-up a step further.</li>
+<li>Learning the db stuff, starting to make some beta designs.</li>
+<li>Completing the issue-tracking page.</li>
+</ol>
+<p>Be hardworking, and be active on community. </p>
+<p>All for delivering the best work!</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-05-14T13:16:06.000Z"><a href="/2014/05/14/openldap-problem/">May 14 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/05/14/openldap-problem/">OpenLDAP Problem</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="var/run/slapd_Problem">var/run/slapd Problem</h2><p>Today when I tried to start my OpenLDAP server by directly using <code>slapd</code> command,  it’s surprisingly failed. It logged this</p>
+<pre><code>unable <span class="built_in">to</span> <span class="built_in">open</span> <span class="built_in">file</span> <span class="string">"/var/run/slapd/slapd.pid"</span>: <span class="number">2</span> (No such <span class="built_in">file</span> <span class="operator">or</span> <span class="built_in">directory</span>)
+</code></pre><p>It seems the <code>var/run/slapd</code> folder is missing. </p>
+<p>But if I use <code>service slapd start</code> it will succeed, and generate <code>var/run/slapd</code> correctly. However, after reboot this folder will once again disappear.</p>
+<p>After some search, I found that every time when Ubuntu boot, the <code>var/run</code> are empty at first, and each folder will be created dynamically by individual service as they start.</p>
+<p>And then I remembered that some time before I’ve used <code>chkconfig</code> to disable slapd from auto startup.</p>
+<p>So the solution is simple, just use <code>chkconfig slapd on</code> to enable it.</p>
+<h2 id="Service_problem">Service problem</h2><p>But after that I encountered the old slapd service problem again, that is the slapd service don’t have right permission to access the db file because of some problems related with Ubuntu’s Apparmor mechanism(SELinux).</p>
+<p>And it’s the exact reson I disabled slapd service.</p>
+<p>Now I have to <code>sudo service slapd stop</code> first and then use the command below to start slapd manually.</p>
+<pre><code>sudo slapd <span class="operator">-d</span> <span class="number">1</span> <span class="operator">-f</span> /etc/ldap/slapd.conf
+</code></pre>
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-05-14T10:46:43.000Z"><a href="/2014/05/14/gsoc2014-pre-post/">May 14 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/05/14/gsoc2014-pre-post/">GSoC2014 Prepost</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="The_exciting_GSoC_work_time_is_coming_soon!!!">The exciting GSoC work time is coming soon!!!</h2><p>But still, there is 5 contests and waiting for me…Hope everything will be fine.</p>
+<h2 id="About_GSoC_Works">About GSoC Works</h2><h3 id="What_I_Have_Done">What I Have Done</h3><ul>
+<li>Implemented a Multipass SSO for OpenMRS HelpDesk.</li>
+<li>Chatted with Elliott about the future plan. I’ve got a clearer image about my walk, and made a initial rough work schedule.</li>
+<li>Got more familiar with OpenMRS-ID</li>
+</ul>
+<h3 id="What_I_Will_Do">What I Will Do</h3><ul>
+<li>Currently, I’m working on OpenID-Connect, in order to build a OpenID server for OpenMRS-ID.</li>
+<li>According to my proposal, I’ll only do the refactor works in first few weeks.</li>
+<li>Continue learn things about the DB, and make some testing prototype try.</li>
+</ul>
+<p>This year’s summer will be a great and fun one.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-05-14T09:40:35.000Z"><a href="/2014/05/14/build-this-site/">May 14 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/05/14/build-this-site/">Build This Site</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>The reasons I abandon my oringinal ghost blog are the slowness (for poor connection of my university) and the capacitance limitaion of OpenShift.</p>
+<p>After messing around with Github Pages and Jekyll for a whole day, I finally found the amazing Hexo.</p>
+<p>So here is what I have done to make this site available.</p>
+<h3 id="Jekyll_Attempt">Jekyll Attempt</h3><p>First, I used Jekyll to build my site.</p>
+<p>But later I found it somehow hard to handle. Here are few reasons,</p>
+<ul>
+<li>It’s hard to switch themes.</li>
+<li>It’s written in Ruby, which I have little knowledge of.</li>
+<li>Though Jekyll has built-in syntax highlighting, it doesn’t support Markdown style codeblocks. And the Github-Pages has limited the gem plugins, so I can’t use kramdown with coderay either.</li>
+<li>I don’t like Liquid, and prefer to use mere Markdown for better portability.</li>
+</ul>
+<p>Though after some google work, I found Google Code Prettify and make it work with Markdown. But the whole process are just painful to me, I hate it.</p>
+<h3 id="Hexo">Hexo</h3><p>So I turned to Hexo.</p>
+<p>Like Jekyll, Hexo is a static website generator, but written in Node.js. So it’s faster and simpler.</p>
+<p>It’s much easier to switch themes in Hexo, and I choosed Light theme designed by the Hexo author.</p>
+<p>Howerver when I choose the theme, I encountered some problems. Though I changed the theme in <code>config.yml</code>, when I <code>hexo generate</code>, hexo won’t generate new css file. It seems that the <code>generate</code> will cache the css file. </p>
+<p>Solutions are simple, run <code>hexo clean</code>, and then <code>hexo generate</code>. That will clear the cache and generate grand new files for you.</p>
+<p>And now, Let’s say a colorful <em>hello</em> to the <strong>world</strong>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdio.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"Hello world!"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Nevertheless, this site is still under construction. I’ll enhance categories and tags functionalities. But I suppose, it should fit my bisic needs currently.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-05-14T02:03:16.000Z"><a href="/2014/05/14/hello-world/">May 14 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/05/14/hello-world/">hello world</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3 id="First_trial_post">First trial post</h3><p>Asterisk line below</p>
+<hr>
+<p><em>italic</em></p>
+<p><strong>bold</strong></p>
+<p><strong><em>italic bold</em></strong></p>
+<blockquote>
+<p>quote here</p>
+</blockquote>
+<p>Below is a <code>codeblock</code></p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> a = <span class="function"><span class="keyword">function</span>(<span class="params">req, res</span>) </span>&#123;&#125;;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">gcd</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (b)</span><br><span class="line">        <span class="keyword">return</span> gcd(b,a%b);</span><br><span class="line">    <span class="keyword">return</span> a;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> a, b;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">"%d%d"</span>, &amp;a, &amp;b);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, gcd(a,b));</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><a href="http://pages.plypy.com">A link here</a></p>
+<ol>
+<li>First</li>
+<li>Second<ol>
+<li>Sublist<ul>
+<li>Sub-sublist</li>
+<li>one more</li>
+</ul>
+</li>
+</ol>
+</li>
+<li>End</li>
+</ol>
+<p>Paragraph 1</p>
+<p>Paragraph 2</p>
+<p>Paragraph 3</p>
+<p>Paragraph 4</p>
+<p>Paragraph 5</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜尋">
+    <input type="hidden" name="q" value="site:pages.plypy.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分類</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Fun/">Fun</a><small>1</small></li>
+  
+    <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
+  
+    <li><a href="/categories/algorithm/">algorithm</a><small>1</small></li>
+  
+    <li><a href="/categories/life/">life</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">標籤</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/CF/">CF</a><small>1</small></li>
+  
+    <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>2</small></li>
+  
+    <li><a href="/tags/Mongoose/">Mongoose</a><small>1</small></li>
+  
+    <li><a href="/tags/Node-js/">Node.js</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenLDAP/">OpenLDAP</a><small>1</small></li>
+  
+    <li><a href="/tags/Shithole/">Shithole</a><small>1</small></li>
+  
+    <li><a href="/tags/Test/">Test</a><small>1</small></li>
+  
+    <li><a href="/tags/VHDL/">VHDL</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+  
+    <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
+  
+    <li><a href="/tags/auth/">auth</a><small>1</small></li>
+  
+    <li><a href="/tags/editorial/">editorial</a><small>1</small></li>
+  
+    <li><a href="/tags/emacs/">emacs</a><small>1</small></li>
+  
+    <li><a href="/tags/exports/">exports</a><small>1</small></li>
+  
+    <li><a href="/tags/fork/">fork</a><small>1</small></li>
+  
+    <li><a href="/tags/games/">games</a><small>1</small></li>
+  
+    <li><a href="/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="/tags/linux/">linux</a><small>1</small></li>
+  
+    <li><a href="/tags/network/">network</a><small>1</small></li>
+  
+    <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
+  
+    <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
+  
+    <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Weihua Cheung
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plypy';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

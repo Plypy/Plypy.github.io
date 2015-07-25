@@ -1,0 +1,256 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>彙整：2015/3 | Pages of Ply_py</title>
+  <meta name="author" content="Weihua Cheung">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Pages of Ply_py"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Pages of Ply_py" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Pages of Ply_py</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+<h2 class="archive-title">2015/3</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-03-09T13:15:38.000Z"><a href="/2015/03/09/OSLAB-Notes3/">Mar 9 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/03/09/OSLAB-Notes3/">OSLAB Notes3</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>这学期的操作系统实验基本上算是上学期操作系统课的一个延续，实验的内容上面也是。。。多有重复。。。</p>
+<p>第一个任务就是添加系统调用，编译内核。。。上一次的笔记<a href="/2014/11/03/OSLAB-Adding-a-system-call-to-Linux-kernel/">OSLAB Adding a system call to Linux kernel</a>.
+以下是老师的要求</p>
+<blockquote>
+<p>为Linux内核设计添加一个系统调用，将系统的相关信息（CPU型号、操作系统的版本号、系统中的进程等类似于Windows的任务管理器的信息）以文字形式列表显示于屏幕，并编写用户程序予以验证
+对于proc文件系统的相关说明，读取proc文件系统的相关信息，可考虑相应的proc编程实验</p>
+</blockquote>
+<p>关于proc，可以参考<a href="http://en.wikipedia.org/wiki/Procfs" target="_blank" rel="external">wikipedia</a>和<code>man proc</code>。简要来说就是内核通过一个虚拟的文件系统，向用户空间的程序提供的一个信息交换的渠道。比如说你可以用 <code>cat /proc/version</code>读出你的操作系统的相关信息，实际上各种工具如<code>uname, ps</code>所做的事情就是读取proc文件并进行解析。</p>
+<p><del>按我揣测来看，老师的意思是让我们在内核态下使用proc来读出各种各样的信息。依我愚见，这是不能完成的，因为内核是proc的提供者，而非使用者，内核态下连文件系统的概念都还没有（尚为源码，还未实现），怎么去读取。而且就算有方法读取，但是你作为提供者，为什么还要费工夫再以使用者的身份调用自己的API，多此一举。所以我把基于系统调用的和proc的分开成两个做了。</del></p>
+<h3 id="UPDATE">UPDATE</h3><hr>
+<p>其实肯定是有方法可以做的，毕竟一切皆可实现，只不过是漂亮不漂亮，符不符合正常逻辑的问题。我跟指导老师谈了一下这个，老师告诉我编译的时候是没有文件系统，可运行的时候就有了，然后读文件的方法用vfs就可以。详见<a href="http://lxr.free-electrons.com/source/fs/read_write.c#L432" target="_blank" rel="external">vfs_read()</a>，当然还存在一些其他的函数，更底层并且更不安全。总的来说吧，合理的逻辑就是，内核提供文件以及proc等，然后各种用户态的程序再去访问它们。虽然我们可以皆由hack调用其他的函数去读取文件，但这本质上是脏的，是不符合设计哲学的，不过毕竟是实验，听老师的……有兴趣的同学可以去hack一下，我还是保留我这个方案。</p>
+<p>另外老师要求要直接输出到屏幕上，以下的代码调用的<code>printk</code>生成的输出都需要通过<code>dmesg</code>去访问，老师说不符合要求……
+printk其实是有记录级别的，就是常见的那种log level，这些level的宏定义在<code>linux/kernel.h</code>中。warning, error, info啊之类的，可以看一下百度百科，另外关于printk的教程在<a href="http://www.xml.com/ldd/chapter/book/ch04.html" target="_blank" rel="external">此</a>。</p>
+<p>这些记录级别其实就是一个数字，越小的越严重，在Linux运行的时候他的console有一个console log level可以通过<code>cat /proc/sys/kernel/printk</code>来查看，第一个数字既是。一般来说默认的应该是4（warning），那么只有小于4的可以被输出到console中。</p>
+<p>可以通过<code>printk(KERN_DEBUG &quot;str&quot;)</code>这样来明确具体输出的级别，当不声明级别的时候一般默认为KERN_WARNING(4)。为了保证输出到console，可以采用最高级别KERN_EMERG。</p>
+<p>但是如果已经编译了内核了，再修改再编译就太蛋疼了，可以通过<code>dmesg -n x</code>来将其修改，我们使用5就可以显示结果了。</p>
+<p>另外如果你在图形界面下的终端去执行的话，仍然会看不到dmesg的结果，需要切换到text console(tty1~tty6),可以通过Ctrl+Alt+Fx切换到ttyx，切换到tty7即可回到图形界面。tty会要求你登录，依次输入用户名，密码即可，接下来就跟操作终端一样了。</p>
+<p>我编译的内核的tty给挂掉了，显示的是一个空黑屏，AskUbuntu上的<a href="http://askubuntu.com/questions/162535/why-does-switching-to-the-tty-give-me-a-blank-screen" target="_blank" rel="external">这个帖子</a>提供了解决方案，遇到同样问题的可以参考一下。</p>
+<p><strong>注意老师要求的是使用SYSCALL， 可以忽略proc那部分</strong></p>
+<hr>
+<h3 id="UPDATE_END">UPDATE END</h3><p>我只实现了显示内核版本，数个进程名与PID的功能。关于内核版本的查询方式，可参照<code>/proc/version</code>使用<code>utsname()-&gt;release</code>，<a href="http://lxr.free-electrons.com/source/fs/proc/version.c" target="_blank" rel="external">源码</a>。
+遍历所有进程可以采用如下代码（代码我是手敲的没编译，可能存在错误，下同）
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/sched.h&gt;</span></span><br><span class="line"><span class="keyword">struct</span> task_struct *task;</span><br><span class="line">for_each_process(task)</span><br><span class="line">&#123;</span><br><span class="line">    printk(<span class="string">"%s [%d]\n"</span>, task-&gt;comm, task-&gt;pid);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="动态模块加载">动态模块加载</h3><p>再具体实现的时候，可以先用Linux的动态模块来测试，这样就不需要说整整编译一次源码了,可以参考实验书。下面是一个最简单的例子。
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/init.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/kernel.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/module.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">plypy_init</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    printk(<span class="string">"Loading Ply_py's module\n"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">plypy_exit</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    printk(<span class="string">"Dropping Ply_py's module\n"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">module_init(plypy_init);</span><br><span class="line">module_exit(plypy_exit);</span><br><span class="line">MODULE_LICENSE(<span class="string">"GPL"</span>);</span><br></pre></td></tr></table></figure></p>
+<p>基本上就是为自己的模块提供上init和exit函数，然后再用<code>module_init</code>,<code>module_exit</code>去注册即可，另外这里<code>MODULE_LICENSE</code>是一个声明许可证的宏，用GPL就行了。再添加一个Makefile，这是实验书上的。(注意Makefile是使用TAB字符进行缩进的)
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ifneq ($(KERNELRELEASE),)&#10;&#9;obj-m:=plypy_mod.o&#10;else&#10;&#9;KERNELDIR:=/lib/modules/$(shell uname -r)/build&#10;&#9;PWD:=$(shell pwd)&#10;modules:&#10;&#9;$(MAKE) -C $(KERNELDIR) M=$(PWD) modules&#10;endif</span><br></pre></td></tr></table></figure></p>
+<p>基本上这个Makefile就是切换了一下目录，然后使用了当前正在运行的内核编译模块的Makefile。然后<code># make</code>，（一般#前缀表示root用户，$表示普通用户）。接下来正常的话会生成一堆文件，其中有一个<code>plypy_mod.ko</code>，是我们用来加载的模块。
+使用<code># insmod plypy_mod.ko</code>来加载，<code># rmmod plypy_mod.ko</code>来卸载。
+同时借助<code>dmesg</code>可以观察到相应的信息。</p>
+<p>然后可以先将，之前读取内核版本以及进程的逻辑置于我们模块的init函数中做一个测试。</p>
+<h3 id="PROC_FS">PROC_FS</h3><p>由于proc提供的是一个虚拟的文件系统，所以我们需要将我们的信息包装成一个文件的形式，为其提供<code>open,read</code>等操作相对应的服务，参照<code>fs/proc/version.c</code>。
+基本上就是为我们的虚拟文件提供了open服务。观察代码，我们可以发现，虚拟文件系统这个名字描述地非常准确，实际上这个文件在物理上并不存在（即不存在于磁盘中），每当用户请求打开文件的时候，内核才会动态生成其内容。
+代码如下：
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/init.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/kernel.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/module.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/sched.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/utsname.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/proc_fs.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/seq_file.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/fs.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> proc_dir_entry *entry;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">plypy_proc_show</span><span class="params">(<span class="keyword">struct</span> seq_file *m, <span class="keyword">void</span> *v)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">struct</span> task_struct *task;</span><br><span class="line">    <span class="keyword">int</span> i = <span class="number">0</span>;</span><br><span class="line">    seq_printf(m, <span class="string">"Kernel version: %s\n"</span>, utsname()-&gt;release);</span><br><span class="line">    seq_printf(m, <span class="string">"Processes, to name a few:\n"</span>);</span><br><span class="line">    for_each_process(task)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (i++ &gt; <span class="number">9</span>) <span class="keyword">break</span>; <span class="comment">// show only 10 processes at most</span></span><br><span class="line">        seq_printf(m, <span class="string">"%s [%d]\n"</span>, task-&gt;comm, task-&gt;pid);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">plypy_proc_open</span><span class="params">(<span class="keyword">struct</span> inode *inode, <span class="keyword">struct</span> file *file)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> single_open(file, plypy_proc_show, NULL);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">struct</span> file_operations plypy_proc_fops = &#123;</span><br><span class="line">    .open       = plypy_proc_open,</span><br><span class="line">    .read       = seq_read,</span><br><span class="line">    .llseek     = seq_lseek,</span><br><span class="line">    .release    = single_release,</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">plypy_init</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    printk(<span class="string">"Loading Ply_py's module\n"</span>);</span><br><span class="line">    entry = proc_create(<span class="string">"plypy"</span>, <span class="number">0</span>, NULL, &amp;plypy_proc_fops);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">plypy_exit</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    proc_remove(entry);</span><br><span class="line">    printk(<span class="string">"Dropping Ply_py's module\n"</span>);</span><br><span class="line">&#125;</span><br><span class="line">module_init(plypy_init);</span><br><span class="line">module_exit(plypy_exit);</span><br><span class="line">MODULE_LICENSE(<span class="string">"GPL"</span>);</span><br></pre></td></tr></table></figure></p>
+<p>通过insmod加载了后，可以通过<code>cat /proc/plypy</code>观察结果。</p>
+<h3 id="SYSCALL">SYSCALL</h3><p>这个可以参照之前的那篇<a href="/2014/11/03/OSLAB-Adding-a-system-call-to-Linux-kernel/">OSLAB Adding a system call to Linux kernel</a>，只用把具体的函数逻辑改一改就行，如下：
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">#include &#60;linux/init.h&#62;&#10;#include &#60;linux/kernel.h&#62;&#10;#include &#60;linux/module.h&#62;&#10;#include &#60;linux/sched.h&#62;&#10;#include &#60;linux/utsname.h&#62;&#10;#include &#60;linux/kernel.h&#62;&#10;&#10;asmlinkage long sys_plypy_hello(void)&#10;&#123;&#10;    struct task_struct *task;&#10;        int i = 0;&#10;        printk(&#34;Kernel version: %s\n&#34;, utsname()-&#62;release);&#10;        printk(&#34;Processes, to name a few:\n&#34;);&#10;        for_each_process(task)&#10;        &#123;&#10;                if (i++ &#62; 9) break; // show only 10 processes at most&#10;                printk(&#34;%s [%d]\n&#34;, task-&#62;comm, task-&#62;pid);&#10;        &#125;&#10;    return 0;&#10;&#125;</span><br></pre></td></tr></table></figure></p>
+<p>就这样。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜尋">
+    <input type="hidden" name="q" value="site:pages.plypy.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分類</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Fun/">Fun</a><small>1</small></li>
+  
+    <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
+  
+    <li><a href="/categories/algorithm/">algorithm</a><small>1</small></li>
+  
+    <li><a href="/categories/life/">life</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">標籤</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/CF/">CF</a><small>1</small></li>
+  
+    <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>2</small></li>
+  
+    <li><a href="/tags/Mongoose/">Mongoose</a><small>1</small></li>
+  
+    <li><a href="/tags/Node-js/">Node.js</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenLDAP/">OpenLDAP</a><small>1</small></li>
+  
+    <li><a href="/tags/Shithole/">Shithole</a><small>1</small></li>
+  
+    <li><a href="/tags/Test/">Test</a><small>1</small></li>
+  
+    <li><a href="/tags/VHDL/">VHDL</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+  
+    <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
+  
+    <li><a href="/tags/auth/">auth</a><small>1</small></li>
+  
+    <li><a href="/tags/editorial/">editorial</a><small>1</small></li>
+  
+    <li><a href="/tags/emacs/">emacs</a><small>1</small></li>
+  
+    <li><a href="/tags/exports/">exports</a><small>1</small></li>
+  
+    <li><a href="/tags/fork/">fork</a><small>1</small></li>
+  
+    <li><a href="/tags/games/">games</a><small>1</small></li>
+  
+    <li><a href="/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="/tags/linux/">linux</a><small>1</small></li>
+  
+    <li><a href="/tags/network/">network</a><small>1</small></li>
+  
+    <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
+  
+    <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
+  
+    <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Weihua Cheung
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plypy';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Dealing With Unique Index of Mongoose and Mongodb | Pages of Ply_py</title>
+  <meta name="author" content="Weihua Cheung">
+  
+  <meta name="description" content="Mongoose provide a unique attribute for schema types. By setting it as true, you can easily create uniqe index for an attribute.
+However there are som">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Dealing With Unique Index of Mongoose and Mongodb"/>
+  <meta property="og:site_name" content="Pages of Ply_py"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Pages of Ply_py" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Pages of Ply_py</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-06-03T12:51:11.000Z"><a href="/2014/06/03/dealing-with-unique-index-of-mongoose-and-mongodb/">Jun 3 2014</a></time>
+      
+      
+  
+    <h1 class="title">Dealing With Unique Index of Mongoose and Mongodb</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Mongoose provide a <a href="http://mongoosejs.com/docs/api.html#schematype_SchemaType-unique" target="_blank" rel="external">unique</a> attribute for schema types. By setting it as true, you can easily create uniqe index for an attribute.</p>
+<p>However there are some issues you must know.</p>
+<h3 id="Mongodb_won’t_ensure_one_item_to_be_unique_from_others_in_the_same_array-">Mongodb won’t ensure one item to be unique from others in the same array.</h3><p>Say, you want to have a email list for your user schema, and you must ensure all members in the email list are unique from anyone else, whether they are in the same array or not.
+So you set this.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> userSchema = <span class="keyword">new</span> Schema(&#123;</span><br><span class="line">    emailList: &#123;</span><br><span class="line">        type: [<span class="built_in">String</span>],</span><br><span class="line">        unique: <span class="literal">true</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">&#125;);</span><br><span class="line"><span class="keyword">var</span> User = Mongoose.model(<span class="string">'User'</span>, userSchema);</span><br></pre></td></tr></table></figure>
+<p>And now, if you try this
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> user1 = <span class="keyword">new</span> User(&#123;emailList: [<span class="string">'john@doe.com'</span>, <span class="string">'foo@bar.com'</span>]&#125;);</span><br><span class="line"><span class="keyword">var</span> user2 = <span class="keyword">new</span> User(&#123;emailList: [<span class="string">'foo@bar.com'</span>]&#125;);</span><br><span class="line">user1.save();</span><br><span class="line">user2.save();</span><br></pre></td></tr></table></figure></p>
+<p>You’ll get an <em>E11000</em> error as desired, everything seems to be fine. But try this,(If you don’t get this error please see section below)</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> user3 = <span class="keyword">new</span> User(&#123;emailList: [<span class="string">'john@doe.com'</span>, <span class="string">'john@doe.com'</span>]&#125;);</span><br><span class="line">user3.save();</span><br></pre></td></tr></table></figure>
+<p>It will pass the unique test… That’s definitely not what we want.</p>
+<p>The solution is simple, create one your own <a href="http://mongoosejs.com/docs/api.html#schematype_SchemaType-validate" target="_blank" rel="external">validator</a>. In this situation:
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> chkArrayDuplicate = &#123;</span><br><span class="line">  validator: <span class="function"><span class="keyword">function</span> (<span class="params">arr</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> sorted = arr.slice();</span><br><span class="line">    sorted.sort();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> i;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">1</span>; i &lt; sorted.length; ++i) &#123;</span><br><span class="line">      <span class="keyword">if</span> (sorted[i] === sorted[i-<span class="number">1</span>]) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">  &#125;,</span><br><span class="line">  msg: <span class="string">'Some items are duplicate'</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>And note that, emails are case-insensitive, so you should add a lowercase <a href="http://mongoosejs.com/docs/api.html#schematype_SchemaType-set" target="_blank" rel="external">setter</a> as well. Mongoose will apply setter first and then the validator, so that will be enough. It goes like below,
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">arrToLowerCase</span>(<span class="params">arr</span>) </span>&#123;</span><br><span class="line">  arr.forEach(<span class="function"><span class="keyword">function</span> (<span class="params">str, index, array</span>) </span>&#123;</span><br><span class="line">    array[index] = str.toLowerCase();</span><br><span class="line">  &#125;);</span><br><span class="line">  <span class="keyword">return</span> arr;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="Sometimes_unique_index_won’t_work_as_you_desired-">Sometimes unique index won’t work as you desired.</h3><p>It’s normal and often that we’ll change our schema during the development &amp; testing. Sometimes when we changed our schema and added the unique qualifier, Mongoose and Mongodb won’t reflect our changes. The unique index won’t be generated, thus you won’t ensure the uniqueness.</p>
+<p>Sometimes, that happens when you have stored some duplicates in collections before.</p>
+<p>But fix this problem won’t be as simple as droping the collections or the databases, or even you restart the <code>mongod</code> instance. Because the problem may lie in your codes.</p>
+<p>You can first check your collections index, by this command in <code>mongo</code> shell, (I’ll use previous <code>user</code> collections as an example)</p>
+<pre><code>use your_testing_db
+db<span class="class">.users</span><span class="class">.getIndexes</span>()
+</code></pre><p>If the index was created, then something terribly may have happened. Or most likely, you won’t have that index. You can add this listener to your model,</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">User.on(<span class="string">'index'</span>, <span class="function"><span class="keyword">function</span> (<span class="params">err</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (err) &#123;</span><br><span class="line">    <span class="built_in">console</span>.error(err);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>This listener will listen the <code>index</code> event created by <code>ensureIndex()</code>. </p>
+<blockquote>
+<p>When your application starts up, Mongoose automatically calls ensureIndex for each defined index in your schema.</p>
+</blockquote>
+<p>See <a href="http://mongoosejs.com/docs/guide.html#indexes" target="_blank" rel="external">Indexes</a> and <a href="http://mongoosejs.com/docs/api.html#model_Model.ensureIndexes" target="_blank" rel="external">Model.ensureIndexes</a>.</p>
+<p>And keep in mind that, everything in Node.js are asynchronous, so the <code>ensureIndex()</code> is as well. So everytime when you tried to fix the problem, you first drop the collection or the database, and the index will also be dropped. And then you run your code again, node fired <code>ensureIndex()</code> and before it has done its job, <code>save()</code> got fired. So you’re messed up as well.</p>
+<p>So the best you can do is to keep index created before you write some data to mongo. On production, you’d better create your collections on the database first.</p>
+<p>When you test your code, better use another database. And because we need to constantly drop something when testing, you should always listen the <code>index</code> event and make sure you write something after that.</p>
+<h3 id="Empty_array_will_be_counted">Empty array will be counted</h3><p>That’s a weired feature of Mongodb, if you use unique index, you can’t have two documents have empty array. It will be count as duplicates, Even if you use <code>sparse</code>. You can check this <a href="https://jira.mongodb.org/browse/SERVER-3934" target="_blank" rel="external">SERVER-3934</a>.</p>
+<p>That’s it.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/MongoDB/">MongoDB</a>, <a href="/tags/Mongoose/">Mongoose</a>, <a href="/tags/unique-index/">unique-index</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">留言</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://pages.plypy.com/2014/06/03/dealing-with-unique-index-of-mongoose-and-mongodb/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜尋">
+    <input type="hidden" name="q" value="site:pages.plypy.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分類</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Fun/">Fun</a><small>1</small></li>
+  
+    <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
+  
+    <li><a href="/categories/algorithm/">algorithm</a><small>1</small></li>
+  
+    <li><a href="/categories/life/">life</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">標籤</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/CF/">CF</a><small>1</small></li>
+  
+    <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>2</small></li>
+  
+    <li><a href="/tags/Mongoose/">Mongoose</a><small>1</small></li>
+  
+    <li><a href="/tags/Node-js/">Node.js</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenLDAP/">OpenLDAP</a><small>1</small></li>
+  
+    <li><a href="/tags/Shithole/">Shithole</a><small>1</small></li>
+  
+    <li><a href="/tags/Test/">Test</a><small>1</small></li>
+  
+    <li><a href="/tags/VHDL/">VHDL</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+  
+    <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
+  
+    <li><a href="/tags/auth/">auth</a><small>1</small></li>
+  
+    <li><a href="/tags/editorial/">editorial</a><small>1</small></li>
+  
+    <li><a href="/tags/emacs/">emacs</a><small>1</small></li>
+  
+    <li><a href="/tags/exports/">exports</a><small>1</small></li>
+  
+    <li><a href="/tags/fork/">fork</a><small>1</small></li>
+  
+    <li><a href="/tags/games/">games</a><small>1</small></li>
+  
+    <li><a href="/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="/tags/linux/">linux</a><small>1</small></li>
+  
+    <li><a href="/tags/network/">network</a><small>1</small></li>
+  
+    <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
+  
+    <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
+  
+    <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Weihua Cheung
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plypy';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

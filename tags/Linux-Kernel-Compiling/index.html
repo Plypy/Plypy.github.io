@@ -1,0 +1,468 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Linux Kernel Compiling | Pages of Ply_py</title>
+  <meta name="author" content="Weihua Cheung">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Pages of Ply_py"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Pages of Ply_py" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Pages of Ply_py</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+<h2 class="archive-title tag">Linux Kernel Compiling</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-04-10T16:05:52.000Z"><a href="/2015/04/11/OSLAB-Notes4/">Apr 11 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/04/11/OSLAB-Notes4/">OSLAB Notes4</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>这个实验的要求是利用linux的字符设备（char devices）创建一个类似管道（pipe）的媒介以供进程间进行通信。</p>
+<p>我主要参考了Linux Devices Drivers， Third Edition（<a href="https://lwn.net/Kernel/LDD3/" target="_blank" rel="external">LDD3</a>）这本书，有关字符设备的内容在第三章以及第六章，另外该书的源码在github上有，<a href="https://github.com/csl/lld3-example/" target="_blank" rel="external">here</a>。愿意深入研究的同学可以去看一下。（<strong>注意：LDD3针对的是2.6，如果使用的是3.x版本需要修改一些地方，我的Ubuntu是3.13</strong>）</p>
+<p>完成这个实验，主要需要两方面的知识，一是Linux的字符设备的相关函数，二是如何利用信号量来进行同步。省事起见，我的代码很多细节都没有考虑，完全是为了达到实验效果而写:)</p>
+<h2 id="字符设备">字符设备</h2><p>Linux将所有的外设都包装为文件来进行处理，这样能极大方便用户态的程序，使用现成的文件操作就可以与外设进行交互。为了包装成文件，需要提供相应的一些操作，如文件的打开，关闭，读写等。在内核中定义了这样的一个结构file_operations，通过其成员可以为一个文件提供各种操作，如其<code>read</code>成员负责着文件的读取，具体的可以参考LDD3 ch03。若为了完成本次实验的效果，只需要使用<code>read</code>和<code>write</code>就好。</p>
+<p>读操作函数形式为，<code>ssize_t (*read) (struct file *, char __user *, size_t, loff_t *);</code>
+写操作函数形式为，<code>ssize_t (*write) (struct file *, const char __user *, size_t, loff_t *);</code>
+这里第一个参数为在内核中文件的指针；第二个参数为用户态程序提供的用来交互的buffer，我们向其中读写；第三个参数为用户态希望读写的长度；第四个则是偏移量。</p>
+<p>在定义了我们的操作后，需要将其与设备关联起来，并且在内核中注册。设备有major number和minor number两个标号，major区分着设备的类型，而由于同一类型的设备可能有多种，需要使用minor来进行区分。这里我们不管minor，只实现一个就好。注册字符设备可以使用两种方法，LDD3上推荐使用的新方法比较麻烦，需要申请、注册、各种初始化，不表。我们使用老方法。</p>
+<p>注册<code>int register_chrdev(unsigned int major, const char *name, struct file_operations *fops);</code></p>
+<p>注销<code>int unregister_chrdev(unsigned int major, const char *name);</code></p>
+<p>注册时可以直接硬编码一个major，但是这样可能会出现冲突等问题。我们可以令major为0，<code>register_chrdev</code>会为我们返回注册到的号，使用printk将其输出即可。注意，注册后并不会在文件系统中生成文件，需要另外编码，或者在用户态中使用<code>mknod</code>。简单起见，我们使用后者。</p>
+<h2 id="同步">同步</h2><p>因为多个进程要同时操作一个文件，这会带来竞争问题。我们可以使用信号量以及睡眠/唤醒机制来控制文件的同步。这里具体可以参考LDD3 ch06。</p>
+<h4 id="信号量">信号量</h4><p>信号量semaphore，其定义在<code>&lt;linux/semaphore.h&gt;</code>内。我们只需要以下的几种操作：</p>
+<p>初始化
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> semaphore sem; </span><br><span class="line">sema_init(&amp;sem,<span class="number">1</span>);	<span class="comment">//将sem初始化为1，即一个mutex</span></span><br></pre></td></tr></table></figure></p>
+<p>P操作 <code>down_interruptible(&amp;sem)</code>,V操作<code>up(&amp;sem)</code>。（down_interruptible，故名思议，允许在函数执行时发生中断，不解释细节,下同）</p>
+<h4 id="睡眠/唤醒">睡眠/唤醒</h4><p>当某资源不可用时，我们可以通过令进程进入睡眠态来阻塞进程，而后将其唤醒，这样能使得效率高一些。</p>
+<p>唤醒的时候存在这样一个问题，我们需要知道去哪找那些睡着了的进程，也就是说需要存储下来睡眠态的进程。内核提供了<code>wait_queue_head_t</code>这样的一种数据结构用以存储睡眠的进程。其初始化方法为<code>init_waitqueue_head(&amp;que)</code>。</p>
+<p>当我们希望一个进程睡眠时，可以使用<code>wait_event_interruptible(que, condition)</code>来将其放入<code>que</code>中以备将来唤醒。这里的condition可以是任意的表达式，其作用相当于循环中的入口条件，开始时当condition不满足时进程会进入睡眠，当其被唤醒后会再次检查condition若仍不满足会继续睡眠。这里就很迷惑了，函数是按值传递的，condition怎么还能这样用，还可以检测它变动的值？其实看源码的话会发现，<code>wait_event_interruptible</code>是一个宏函数，它会被展开成相应的条件循环逻辑。</p>
+<p>换行时使用<code>wake_up_interruptible(&amp;que)</code>，其会将<code>que</code>中的所有使用<code>wait_event_interruptible</code>放入的进程唤醒。</p>
+<h2 id="制作管道">制作管道</h2><p>有了以上的预备知识后，也就能开始搞我们的程序了(buggy)。</p>
+<p>为了尽量简单，我们将存储的buffer，以及等待队列等数据结构都只做一份全局的，因为我们只需要一个设备。注册模块的时候完成各种初始化以及字符设备的注册，并将注册到的major号输出出来以备使用。</p>
+<p>具体数据结构如下,
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">struct plypy_pipe &#123;&#10;    wait_queue_head_t inq, outq;       /* read and write queues */&#10;    char buffer[MAXN], *end;           /* static buffer */&#10;    char *wp;                          /* where the data ends */&#10;    struct semaphore sem;              /* mutual exclusion semaphore */&#10;&#125;;</span><br></pre></td></tr></table></figure></p>
+<p><code>inq</code>,<code>outq</code>分别用来存储读/写的进程。<code>buffer</code>数组用来存储数据，<code>end</code>是一个辅助的变量用来标记buffer的末尾。<code>wp</code>用来标记buffer数据的末尾，可以用来判断<code>buffer</code>是否为空。<code>sem</code>则为一个信号量。</p>
+<p>简单起见，我们的读写逻辑是这样的。<code>buffer</code>中只存储一次写的数据，不支持连续写，不支持连续读。即只有在<code>buffer</code>为空的时候，才可以再写入下一个数据；只有在<code>buffer</code>中有数据的时候，才能读取数据，并且每次读取完毕后将其设为空。可以看出我们的管道只支持‘写读写读写读……’这样的操作序列，并且每次数据的传输都是从某一个写进程传向某一个读进程，并非广播。</p>
+<p>在读写数据时，涉及到一次数据从内核到用户的传输，需要使用<code>copy_to_user</code>，<code>copy_from_user</code>两个函数来完成。</p>
+<p>读写的流程也比较简单，不再赘述，直接看源码吧，如下：
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Create a virtual char devices</span><br><span class="line"> **/</span></span><br><span class="line"></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/module.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/kernel.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/init.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/fs.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/semaphore.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/types.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/wait.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/cdev.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/sched.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;asm/uaccess.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="preprocessor">#<span class="keyword">define</span> MAXN 1024</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">define</span> PLYPY_DEV_NAME "plypy_chrdev"</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/* static int plypy_dev_open(struct inode *, struct file *filp); */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> ssize_t <span class="title">plypy_dev_read</span><span class="params">(<span class="keyword">struct</span> file *, <span class="keyword">char</span> *, size_t, loff_t *)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">static</span> ssize_t <span class="title">plypy_dev_write</span><span class="params">(<span class="keyword">struct</span> file *, <span class="keyword">const</span> <span class="keyword">char</span> *, size_t, loff_t *)</span></span>;</span><br><span class="line"><span class="comment">/* static int plypy_dev_release(struct inode *, struct file *filp); */</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> file_operations fops =</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">/* .open = plypy_dev_open, */</span></span><br><span class="line">    <span class="comment">/* .release = plypy_dev_release, */</span></span><br><span class="line">    .read = plypy_dev_read,</span><br><span class="line">    .write = plypy_dev_write</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> Major;</span><br><span class="line"><span class="keyword">struct</span> plypy_pipe &#123;</span><br><span class="line">    <span class="keyword">wait_queue_head_t</span> inq, outq;       <span class="comment">/* read and write queues */</span></span><br><span class="line">    <span class="keyword">char</span> buffer[MAXN], *end;           <span class="comment">/* static buffer */</span></span><br><span class="line">    <span class="keyword">char</span> *wp;                          <span class="comment">/* where the data ends */</span></span><br><span class="line">    <span class="keyword">struct</span> semaphore sem;              <span class="comment">/* mutual exclusion semaphore */</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">struct</span> plypy_pipe plypy_pipe;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">struct</span> plypy_pipe *dev = &amp;plypy_pipe;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> ssize_t <span class="title">plypy_dev_read</span><span class="params">(<span class="keyword">struct</span> file *filp, <span class="keyword">char</span> __user *buf, size_t count,</span><br><span class="line">                              loff_t *offset)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (down_interruptible(&amp;dev-&gt;sem))</span><br><span class="line">        <span class="keyword">return</span> -ERESTARTSYS;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* There may be multiple readers, so the use of loop is necessary */</span></span><br><span class="line">    <span class="keyword">while</span> (dev-&gt;buffer == dev-&gt;wp) &#123; <span class="comment">/* nothing to read, wait for inputs */</span></span><br><span class="line">        up(&amp;dev-&gt;sem);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (wait_event_interruptible(dev-&gt;inq, (dev-&gt;buffer != dev-&gt;wp)))</span><br><span class="line">            <span class="keyword">return</span> -ERESTARTSYS;</span><br><span class="line">        <span class="comment">/* Loop and reacquire the lock */</span></span><br><span class="line">        <span class="keyword">if</span> (down_interruptible(&amp;dev-&gt;sem))</span><br><span class="line">            <span class="keyword">return</span> -ERESTARTSYS;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* read data */</span></span><br><span class="line">    count = min(count, (<span class="keyword">size_t</span>)(dev-&gt;wp - dev-&gt;buffer));</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">copy_t</span>o_user(buf, dev-&gt;buffer, count)) &#123;</span><br><span class="line">        <span class="comment">/* error happened */</span></span><br><span class="line">        up(&amp;dev-&gt;sem);</span><br><span class="line">        <span class="keyword">return</span> -EFAULT;</span><br><span class="line">    &#125;</span><br><span class="line">    dev-&gt;wp = dev-&gt;buffer;</span><br><span class="line">    up(&amp;dev-&gt;sem);</span><br><span class="line"></span><br><span class="line">    wake_up_interruptible(&amp;dev-&gt;outq);</span><br><span class="line">    <span class="keyword">return</span> count;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> ssize_t <span class="title">plypy_dev_write</span><span class="params">(<span class="keyword">struct</span> file *filp, <span class="keyword">const</span> <span class="keyword">char</span> __user *buf,</span><br><span class="line">                               size_t count, loff_t *offset)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (down_interruptible(&amp;dev-&gt;sem))</span><br><span class="line">        <span class="keyword">return</span> -ERESTARTSYS;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (dev-&gt;buffer != dev-&gt;wp) &#123; <span class="comment">/* the old data haven't been retrieved */</span></span><br><span class="line">        up(&amp;dev-&gt;sem);</span><br><span class="line">        <span class="keyword">if</span> (wait_event_interruptible(dev-&gt;outq, (dev-&gt;buffer == dev-&gt;wp)))</span><br><span class="line">            <span class="keyword">return</span> -ERESTARTSYS;</span><br><span class="line">        <span class="comment">/* P and loop again */</span></span><br><span class="line">        <span class="keyword">if</span> (down_interruptible(&amp;dev-&gt;sem))</span><br><span class="line">            <span class="keyword">return</span> -ERESTARTSYS;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    count = min(count, (<span class="keyword">size_t</span>)( dev-&gt;end - dev-&gt;buffer ));</span><br><span class="line">    <span class="keyword">if</span> (copy_from_user(dev-&gt;buffer, buf, count)) &#123;</span><br><span class="line">        <span class="comment">/* error happened */</span></span><br><span class="line">        up(&amp;dev-&gt;sem);</span><br><span class="line">        <span class="keyword">return</span> -EFAULT;</span><br><span class="line">    &#125;</span><br><span class="line">    dev-&gt;wp += count;</span><br><span class="line">    up(&amp;dev-&gt;sem);</span><br><span class="line">    wake_up_interruptible(&amp;dev-&gt;inq);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> count;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">plypy_init</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    plypy_pipe.end = dev-&gt;buffer+MAXN;</span><br><span class="line">    plypy_pipe.wp = dev-&gt;buffer;</span><br><span class="line">    init_waitqueue_head(&amp;dev-&gt;inq);</span><br><span class="line">    init_waitqueue_head(&amp;dev-&gt;outq);</span><br><span class="line">    sema_init(&amp;dev-&gt;sem, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    Major = register_chrdev(<span class="number">0</span>, PLYPY_DEV_NAME, &amp;fops);</span><br><span class="line">    <span class="keyword">if</span> (Major &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> Major;</span><br><span class="line">    &#125;</span><br><span class="line">    printk(KERN_INFO <span class="string">"The %s is assigned major number %d"</span>,</span><br><span class="line">           PLYPY_DEV_NAME, Major);</span><br><span class="line">    printk(KERN_INFO <span class="string">"Use 'mknod /dev/%s c %d 0' to create a file"</span>,</span><br><span class="line">           PLYPY_DEV_NAME, Major);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">plypy_exit</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    unregister_chrdev(Major, PLYPY_DEV_NAME);</span><br><span class="line">    printk(KERN_INFO <span class="string">"The %s is destroyed"</span>, PLYPY_DEV_NAME);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">module_init(plypy_init);</span><br><span class="line">module_exit(plypy_exit);</span><br><span class="line"></span><br><span class="line">MODULE_LICENSE(<span class="string">"GPL"</span>);</span><br></pre></td></tr></table></figure></p>
+<h2 id="编译&amp;测试">编译&amp;测试</h2><p>我使用的是如下的Makefile进行的测试
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">source := plypy&#10;cdevname := plypy_chrdev&#10;major := $(shell awk -v mod=&#39;$(cdevname)&#39; &#39;$$2==mod&#123;print $$1&#125;&#39; /proc/devices)&#10;&#10;ifneq ($(KERNELRELEASE),)&#10;&#9;obj-m:=$(source).o&#10;else&#10;&#9;KERNELDIR:=/lib/modules/$(shell uname -r)/build&#10;&#9;PWD:=$(shell pwd)&#10;endif&#10;build:&#10;&#9;$(MAKE) -C $(KERNELDIR) M=$(PWD) modules&#10;&#10;install:&#10;&#9;insmod $(source).ko&#10;&#9;mknod /dev/$(cdevname) c $(major) 0&#10;&#10;remove:&#10;&#9;rmmod $(source)&#10;&#9;rm /dev/$(cdevname)&#10;&#10;clean:&#10;&#9;rm modules.order Module.symvers *.ko *.o</span><br></pre></td></tr></table></figure></p>
+<p><code>source</code>这里是你的源文件的名字（无后缀），<code>cdevname</code>是注册字符设备时使用的名字，需要通过它在<code>/proc/devices</code>里找刚刚我们的设备注册到的major。</p>
+<p>在root下依次执行如下命令，编译安装模块并创建字符设备文件。
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">#make build&#10;#make install</span><br></pre></td></tr></table></figure></p>
+<p>接下来可以用<code>cat</code>和<code>echo</code>来测试，开启一个终端执行<code>#cat /dev/plypy_chrdev</code>，在另一个终端下不断用<code>echo</code>写入数据，如下：
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">#echo 20 &#62; /dev/plypy_chrdev&#10;#echo 30 &#62; /dev/plypy_chrdev</span><br></pre></td></tr></table></figure></p>
+<p>可以看到每次写入后，均会在<code>cat</code>中出现。</p>
+<p>若要编程测试的话也比较简单，无非就是一端<code>read</code>，一端<code>write</code>。</p>
+<p>读程序
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdio.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdlib.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;string.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;sys/stat.h&gt;           /* O_RDWR */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;unistd.h&gt;             /* read/write */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;fcntl.h&gt;              /* open */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">define</span> MAXN 128</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">char</span> buffer[MAXN];</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> fd = open(<span class="string">"/dev/plypy_chrdev"</span>, O_RDWR);</span><br><span class="line">    <span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Read something?"</span>);</span><br><span class="line">        <span class="built_in">memset</span>(buffer, <span class="number">0</span>, <span class="keyword">sizeof</span>(buffer));</span><br><span class="line">        <span class="keyword">while</span> (getchar() != <span class="string">'\n'</span>) <span class="comment">/* eat it all */</span></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        read(fd, buffer, MAXN-<span class="number">1</span>);</span><br><span class="line">        <span class="built_in">puts</span>(buffer);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>写程序
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdio.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdlib.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;string.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;sys/stat.h&gt;           /* O_RDWR */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;unistd.h&gt;             /* read/write */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;fcntl.h&gt;              /* open */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">define</span> MAXN 128</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">char</span> buffer[MAXN];</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> fd = open(<span class="string">"/dev/plypy_chrdev"</span>, O_RDWR);</span><br><span class="line">    <span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Write something:\n"</span>);</span><br><span class="line">        <span class="built_in">memset</span>(buffer, <span class="number">0</span>, <span class="keyword">sizeof</span>(buffer));</span><br><span class="line">        gets(buffer);</span><br><span class="line">        write(fd, buffer, <span class="built_in">strlen</span>(buffer)+<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>编译后在root下执行即可。</p>
+<h2 id="End">End</h2><p>就这样</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-03-09T13:15:38.000Z"><a href="/2015/03/09/OSLAB-Notes3/">Mar 9 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/03/09/OSLAB-Notes3/">OSLAB Notes3</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>这学期的操作系统实验基本上算是上学期操作系统课的一个延续，实验的内容上面也是。。。多有重复。。。</p>
+<p>第一个任务就是添加系统调用，编译内核。。。上一次的笔记<a href="/2014/11/03/OSLAB-Adding-a-system-call-to-Linux-kernel/">OSLAB Adding a system call to Linux kernel</a>.
+以下是老师的要求</p>
+<blockquote>
+<p>为Linux内核设计添加一个系统调用，将系统的相关信息（CPU型号、操作系统的版本号、系统中的进程等类似于Windows的任务管理器的信息）以文字形式列表显示于屏幕，并编写用户程序予以验证
+对于proc文件系统的相关说明，读取proc文件系统的相关信息，可考虑相应的proc编程实验</p>
+</blockquote>
+<p>关于proc，可以参考<a href="http://en.wikipedia.org/wiki/Procfs" target="_blank" rel="external">wikipedia</a>和<code>man proc</code>。简要来说就是内核通过一个虚拟的文件系统，向用户空间的程序提供的一个信息交换的渠道。比如说你可以用 <code>cat /proc/version</code>读出你的操作系统的相关信息，实际上各种工具如<code>uname, ps</code>所做的事情就是读取proc文件并进行解析。</p>
+<p><del>按我揣测来看，老师的意思是让我们在内核态下使用proc来读出各种各样的信息。依我愚见，这是不能完成的，因为内核是proc的提供者，而非使用者，内核态下连文件系统的概念都还没有（尚为源码，还未实现），怎么去读取。而且就算有方法读取，但是你作为提供者，为什么还要费工夫再以使用者的身份调用自己的API，多此一举。所以我把基于系统调用的和proc的分开成两个做了。</del></p>
+<h3 id="UPDATE">UPDATE</h3><hr>
+<p>其实肯定是有方法可以做的，毕竟一切皆可实现，只不过是漂亮不漂亮，符不符合正常逻辑的问题。我跟指导老师谈了一下这个，老师告诉我编译的时候是没有文件系统，可运行的时候就有了，然后读文件的方法用vfs就可以。详见<a href="http://lxr.free-electrons.com/source/fs/read_write.c#L432" target="_blank" rel="external">vfs_read()</a>，当然还存在一些其他的函数，更底层并且更不安全。总的来说吧，合理的逻辑就是，内核提供文件以及proc等，然后各种用户态的程序再去访问它们。虽然我们可以皆由hack调用其他的函数去读取文件，但这本质上是脏的，是不符合设计哲学的，不过毕竟是实验，听老师的……有兴趣的同学可以去hack一下，我还是保留我这个方案。</p>
+<p>另外老师要求要直接输出到屏幕上，以下的代码调用的<code>printk</code>生成的输出都需要通过<code>dmesg</code>去访问，老师说不符合要求……
+printk其实是有记录级别的，就是常见的那种log level，这些level的宏定义在<code>linux/kernel.h</code>中。warning, error, info啊之类的，可以看一下百度百科，另外关于printk的教程在<a href="http://www.xml.com/ldd/chapter/book/ch04.html" target="_blank" rel="external">此</a>。</p>
+<p>这些记录级别其实就是一个数字，越小的越严重，在Linux运行的时候他的console有一个console log level可以通过<code>cat /proc/sys/kernel/printk</code>来查看，第一个数字既是。一般来说默认的应该是4（warning），那么只有小于4的可以被输出到console中。</p>
+<p>可以通过<code>printk(KERN_DEBUG &quot;str&quot;)</code>这样来明确具体输出的级别，当不声明级别的时候一般默认为KERN_WARNING(4)。为了保证输出到console，可以采用最高级别KERN_EMERG。</p>
+<p>但是如果已经编译了内核了，再修改再编译就太蛋疼了，可以通过<code>dmesg -n x</code>来将其修改，我们使用5就可以显示结果了。</p>
+<p>另外如果你在图形界面下的终端去执行的话，仍然会看不到dmesg的结果，需要切换到text console(tty1~tty6),可以通过Ctrl+Alt+Fx切换到ttyx，切换到tty7即可回到图形界面。tty会要求你登录，依次输入用户名，密码即可，接下来就跟操作终端一样了。</p>
+<p>我编译的内核的tty给挂掉了，显示的是一个空黑屏，AskUbuntu上的<a href="http://askubuntu.com/questions/162535/why-does-switching-to-the-tty-give-me-a-blank-screen" target="_blank" rel="external">这个帖子</a>提供了解决方案，遇到同样问题的可以参考一下。</p>
+<p><strong>注意老师要求的是使用SYSCALL， 可以忽略proc那部分</strong></p>
+<hr>
+<h3 id="UPDATE_END">UPDATE END</h3><p>我只实现了显示内核版本，数个进程名与PID的功能。关于内核版本的查询方式，可参照<code>/proc/version</code>使用<code>utsname()-&gt;release</code>，<a href="http://lxr.free-electrons.com/source/fs/proc/version.c" target="_blank" rel="external">源码</a>。
+遍历所有进程可以采用如下代码（代码我是手敲的没编译，可能存在错误，下同）
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/sched.h&gt;</span></span><br><span class="line"><span class="keyword">struct</span> task_struct *task;</span><br><span class="line">for_each_process(task)</span><br><span class="line">&#123;</span><br><span class="line">    printk(<span class="string">"%s [%d]\n"</span>, task-&gt;comm, task-&gt;pid);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="动态模块加载">动态模块加载</h3><p>再具体实现的时候，可以先用Linux的动态模块来测试，这样就不需要说整整编译一次源码了,可以参考实验书。下面是一个最简单的例子。
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/init.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/kernel.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/module.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">plypy_init</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    printk(<span class="string">"Loading Ply_py's module\n"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">plypy_exit</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    printk(<span class="string">"Dropping Ply_py's module\n"</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">module_init(plypy_init);</span><br><span class="line">module_exit(plypy_exit);</span><br><span class="line">MODULE_LICENSE(<span class="string">"GPL"</span>);</span><br></pre></td></tr></table></figure></p>
+<p>基本上就是为自己的模块提供上init和exit函数，然后再用<code>module_init</code>,<code>module_exit</code>去注册即可，另外这里<code>MODULE_LICENSE</code>是一个声明许可证的宏，用GPL就行了。再添加一个Makefile，这是实验书上的。(注意Makefile是使用TAB字符进行缩进的)
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ifneq ($(KERNELRELEASE),)&#10;&#9;obj-m:=plypy_mod.o&#10;else&#10;&#9;KERNELDIR:=/lib/modules/$(shell uname -r)/build&#10;&#9;PWD:=$(shell pwd)&#10;modules:&#10;&#9;$(MAKE) -C $(KERNELDIR) M=$(PWD) modules&#10;endif</span><br></pre></td></tr></table></figure></p>
+<p>基本上这个Makefile就是切换了一下目录，然后使用了当前正在运行的内核编译模块的Makefile。然后<code># make</code>，（一般#前缀表示root用户，$表示普通用户）。接下来正常的话会生成一堆文件，其中有一个<code>plypy_mod.ko</code>，是我们用来加载的模块。
+使用<code># insmod plypy_mod.ko</code>来加载，<code># rmmod plypy_mod.ko</code>来卸载。
+同时借助<code>dmesg</code>可以观察到相应的信息。</p>
+<p>然后可以先将，之前读取内核版本以及进程的逻辑置于我们模块的init函数中做一个测试。</p>
+<h3 id="PROC_FS">PROC_FS</h3><p>由于proc提供的是一个虚拟的文件系统，所以我们需要将我们的信息包装成一个文件的形式，为其提供<code>open,read</code>等操作相对应的服务，参照<code>fs/proc/version.c</code>。
+基本上就是为我们的虚拟文件提供了open服务。观察代码，我们可以发现，虚拟文件系统这个名字描述地非常准确，实际上这个文件在物理上并不存在（即不存在于磁盘中），每当用户请求打开文件的时候，内核才会动态生成其内容。
+代码如下：
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/init.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/kernel.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/module.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/sched.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/utsname.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/proc_fs.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/seq_file.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/fs.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> proc_dir_entry *entry;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">plypy_proc_show</span><span class="params">(<span class="keyword">struct</span> seq_file *m, <span class="keyword">void</span> *v)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">struct</span> task_struct *task;</span><br><span class="line">    <span class="keyword">int</span> i = <span class="number">0</span>;</span><br><span class="line">    seq_printf(m, <span class="string">"Kernel version: %s\n"</span>, utsname()-&gt;release);</span><br><span class="line">    seq_printf(m, <span class="string">"Processes, to name a few:\n"</span>);</span><br><span class="line">    for_each_process(task)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (i++ &gt; <span class="number">9</span>) <span class="keyword">break</span>; <span class="comment">// show only 10 processes at most</span></span><br><span class="line">        seq_printf(m, <span class="string">"%s [%d]\n"</span>, task-&gt;comm, task-&gt;pid);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">plypy_proc_open</span><span class="params">(<span class="keyword">struct</span> inode *inode, <span class="keyword">struct</span> file *file)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> single_open(file, plypy_proc_show, NULL);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">struct</span> file_operations plypy_proc_fops = &#123;</span><br><span class="line">    .open       = plypy_proc_open,</span><br><span class="line">    .read       = seq_read,</span><br><span class="line">    .llseek     = seq_lseek,</span><br><span class="line">    .release    = single_release,</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">plypy_init</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    printk(<span class="string">"Loading Ply_py's module\n"</span>);</span><br><span class="line">    entry = proc_create(<span class="string">"plypy"</span>, <span class="number">0</span>, NULL, &amp;plypy_proc_fops);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">plypy_exit</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    proc_remove(entry);</span><br><span class="line">    printk(<span class="string">"Dropping Ply_py's module\n"</span>);</span><br><span class="line">&#125;</span><br><span class="line">module_init(plypy_init);</span><br><span class="line">module_exit(plypy_exit);</span><br><span class="line">MODULE_LICENSE(<span class="string">"GPL"</span>);</span><br></pre></td></tr></table></figure></p>
+<p>通过insmod加载了后，可以通过<code>cat /proc/plypy</code>观察结果。</p>
+<h3 id="SYSCALL">SYSCALL</h3><p>这个可以参照之前的那篇<a href="/2014/11/03/OSLAB-Adding-a-system-call-to-Linux-kernel/">OSLAB Adding a system call to Linux kernel</a>，只用把具体的函数逻辑改一改就行，如下：
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">#include &#60;linux/init.h&#62;&#10;#include &#60;linux/kernel.h&#62;&#10;#include &#60;linux/module.h&#62;&#10;#include &#60;linux/sched.h&#62;&#10;#include &#60;linux/utsname.h&#62;&#10;#include &#60;linux/kernel.h&#62;&#10;&#10;asmlinkage long sys_plypy_hello(void)&#10;&#123;&#10;    struct task_struct *task;&#10;        int i = 0;&#10;        printk(&#34;Kernel version: %s\n&#34;, utsname()-&#62;release);&#10;        printk(&#34;Processes, to name a few:\n&#34;);&#10;        for_each_process(task)&#10;        &#123;&#10;                if (i++ &#62; 9) break; // show only 10 processes at most&#10;                printk(&#34;%s [%d]\n&#34;, task-&#62;comm, task-&#62;pid);&#10;        &#125;&#10;    return 0;&#10;&#125;</span><br></pre></td></tr></table></figure></p>
+<p>就这样。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-11-03T11:47:22.000Z"><a href="/2014/11/03/OSLAB-Adding-a-system-call-to-Linux-kernel/">Nov 3 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/11/03/OSLAB-Adding-a-system-call-to-Linux-kernel/">OSLAB Adding a system call to Linux kernel</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="操作系统实验记录—-编译Linux内核添加系统调用">操作系统实验记录—-编译Linux内核添加系统调用</h2><p>学过好多东西。。。但往往一定时间后自己都会忘掉。。。想去学就还得再重复一次之前的过程。还是把自己学习的过程记录下来吧，方便以后查阅。</p>
+<p>我渣交计算机大三的课程是相当的充实啊，海量的专业课与实验，再加上其他的一些事情，最近几天变身“真学狗”。。。</p>
+<p>这次操作系统实验是给Linux内核添加一个系统调用，然后重编内核。我的环境如下：Windows下VirtualBox 4.6+Ubuntu12.04(64bit)+Linux3.16</p>
+<h2 id="虚拟机&amp;Ubuntu">虚拟机&amp;Ubuntu</h2><p>编译Linux内核当然首先需要一个Linux的发行版了，我用的是小白福音Ubuntu。实验指导是让在虚拟机下编译内核的，但听夏赢家说可以直接在实际的系统下搞这件事情，这样最后不过只是给系统添加了一个启动时的选项而已，不会影响原来的内核。</p>
+<p>于是我欢心雀跃的跑到我Ubuntu下面开始编译。。。为了追求速度，用了多线程编译。没曾想，电脑太渣，只听风扇飞转，过一会机器就黑了。。。大概是CPU过热保护断电了吧，呃，Linux的桌面版对于个人用户来说还是有些渣啊。思考再三后我决定还是在虚拟机下搞这件事情，因为看到SO上有不少人说搞内核这个东西可能会”Messing up your production machine”</p>
+<p>正题开始，首先我们需要VirtualBox，推荐使用较新的4.x版本，有不少方便的功能，以及一个Ubuntu的映像文件，自己去下载吧。(<strong>UPDATE</strong> 蟹老板告诉我vmware可以轻松ctrl+c/v。。。，想试的同学可以去搞一下)</p>
+<p>好了后新建一个虚拟机，选择对应版本的Ubuntu，这个一定要跟自己准备安装的Ubuntu的版本对上。然后再几个选项，注意硬盘容量这里要选大一点。。。否则会不够用，我被坑了两次，大概30G就够用了。还有这里需要注意一点，Windows下VirtualBox会默认将磁盘文件存储在C盘下，这个路径想改的话可以在Settings-General里改掉。<strong>并且</strong>把内存设置得大一些，1G就够了，否则会悲剧，下面会讲到。</p>
+<p>然后我们再来配置一下这个虚拟机，我改了这几个</p>
+<ul>
+<li>General—&gt;Shared Clipboard：共享虚拟机和主机器的黏贴板</li>
+<li>System—&gt;Acceleration：硬件加速，能快一点，但似乎有些机器需要在BIOS上先启用硬件加速功能</li>
+<li>System—&gt;Processor: 这里选择和你机器一样的CPU数目，效率会高一些。</li>
+<li>Network：我使用了最为简单的NAT，不需要配置什么的</li>
+</ul>
+<p><em>下面这些部分都是关于配置VirtualBox的虚拟机与主系统进行文件拷贝的</em></p>
+<ul>
+<li>Shared Folders：虚拟机和主机间共享的文件夹，可以方便的用来传输文件。在Machine Folders里添加一个你想要向虚拟机里共享的文件夹吧，然后把auto mount，permanent勾上。</li>
+</ul>
+<p>接下来启动虚拟机，按照提示选择之前准备好的Ubuntu镜像，安装就是了。安装完毕后进入Ubuntu，还不能直接就开始干活。在上方菜单栏里找Devices—&gt;Insert Guest Additions CD image。这个是VirtualBox的一个增强插件，不安装的话无法使用共享文件夹等功能。点击后，虚拟机会加载这个镜像，然后弹出窗口，选Run就是了。关于Guest Additions具体参考官方文档 <a href="https://www.virtualbox.org/manual/ch04.html" target="_blank" rel="external">https://www.virtualbox.org/manual/ch04.html</a></p>
+<p>这是在 <code>/media</code>下面会加载我们之前共享的文档，Ctrl+Alt+T呼叫出终端，执行</p>
+<pre><code><span class="keyword">cd</span> /media
+<span class="keyword">ls</span> -<span class="keyword">l</span>
+</code></pre><p>可以看到这个目录下有一个sf_开头的文件夹这个就是我们共享的文件夹。我的是<code>sf_OSLAB</code>。但是此时如果我们访问的话是会显示<code>Permission denied</code>，因为应当注意到这个文件夹是属于<code>vboxsf</code>这个组的，我的用户名为plypy,执行</p>
+<pre><code><span class="label">sudo</span> <span class="keyword">adduser </span>plypy vboxsf
+</code></pre><p>然后注销再进入系统就可以搞定了</p>
+<h2 id="向Linux内核添加Hello_world_syscall">向Linux内核添加Hello world syscall</h2><p>呼出终端，建立一个文件夹用于此次实验</p>
+<pre><code><span class="built_in">mkdir</span> OSLAB
+</code></pre><hr>
+<p><strong>Update:</strong>本来用的是助教ftp上的3.13但是悲剧了，编译安装后没办法启动于是我就去下载了 3.16，最近网速蛮快的，我就直接在虚拟机下下载了压缩包</p>
+<pre><code>wget <span class="symbol">https:</span>/<span class="regexp">/www.kernel.org/pub</span><span class="regexp">/linux/kernel</span><span class="regexp">/v3.x/linux</span>-<span class="number">3.16</span>.tar.xz
+</code></pre><p><strong>More Update</strong>操**的，3.16也挂了。。。不过还好3.16显示了Kernel Panic的信息，”not syncing out of memory and no killable processes”关掉虚拟机，把内存增加设置到1G就解决问题了。想必之前3.13没成功也是这个问题，但是3.13当时没有显示Kernel Panic信息。我也不清楚,还是推荐大家用3.16或者其他的稳定版本吧。</p>
+<hr>
+<p>把东西都放进那个共享的文件夹后，在Linux下执行命令将东西都拷贝到之前建立的目录下吧</p>
+<pre><code><span class="keyword">cp</span> /media/sf_OSLAB<span class="comment">/* OSLAB/ -r</span>
+</code></pre><p>我将Linux的压缩包放在了里面，所以进去解压</p>
+<pre><code><span class="tag">cd</span> <span class="tag">OSLAB</span>
+<span class="tag">tar</span> <span class="tag">-xvf</span> <span class="tag">linux-3</span><span class="class">.16</span><span class="class">.tar</span><span class="class">.xz</span>
+</code></pre><p>接下来进入解压后的目录</p>
+<pre><code><span class="built_in">cd</span> linux-<span class="number">3.16</span>
+</code></pre><p><code>arch/x86/syscalls/syscall_64.tbl</code>这个文件存储的是64位所有syscall的表，进去添加一个。如果你安装的是32位的Ubuntu的话修改<code>syscall_32.tbl</code>就好。</p>
+<pre><code><span class="keyword">cd</span> <span class="keyword">arch</span>/x86/syscalls
+</code></pre><p>这张表的结构是</p>
+<pre><code><span class="tag">&lt;number&gt;</span> <span class="tag">&lt;abi&gt;</span> <span class="tag">&lt;name&gt;</span> <span class="tag">&lt;entry point&gt;</span>
+</code></pre><ul>
+<li>number， 是对应的syscall的编号。</li>
+<li>abi,文档说是The ABI, or application binary interface, to use. Either 64, x32, or common for both。</li>
+<li>name，是名字</li>
+<li>entry point是你定义的函数的名字。按照惯例应该为 sys_function_name</li>
+</ul>
+<p>我添加了一条</p>
+<pre><code><span class="number">317</span> <span class="preprocessor">common</span>  plypy_hello     sys_plypy_hello
+</code></pre><p>关于如何编辑这个文件，可以使用</p>
+<pre><code><span class="tag">vi</span> <span class="tag">syscall_64</span><span class="class">.tbl</span>
+</code></pre><p>这使用的是系统自带的vim，这是一个蛮不错的编辑器。想学习的话运行一下<code>vimtutor</code>。或者简单一点用<code>gedit</code>也可以，</p>
+<pre><code><span class="tag">gedit</span> <span class="tag">syscall_64</span><span class="class">.tbl</span>
+</code></pre><p>接下来找<code>include/linux/syscalls.h</code>，将我们的syscall声明添加进该头文件，仿照其他的声明，写</p>
+<pre><code>asmlinkage <span class="function"><span class="keyword">long</span> <span class="title">sys_plypy_hello</span><span class="params">(<span class="keyword">void</span>)</span></span>;
+</code></pre><p>因为我们将添加的是一个无参数的syscall所以声明成这样，注意在C语言下声明不带参量的函数需要使用void关键字，如</p>
+<pre><code><span class="keyword">return</span><span class="number">_</span><span class="keyword">value</span> foo(<span class="keyword">void</span>);
+</code></pre><p>另外这里的<code>asmlinkage</code>是用来告诉GCC不要将这个函数的参量存入寄存器而是栈中,详见Google。还有syscall需要返回一个long。</p>
+<p>接下来去实现自己的syscall，建立<code>kernel/plypy_hello.c</code>,如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/kernel.h&gt;</span></span><br><span class="line"><span class="function">asmlinkage <span class="keyword">long</span> <span class="title">sys_plypy_hello</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    printk(<span class="string">"Ply_py says, Hello World!\n"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里调用了printk，其是printf的兄弟函数，作用是向kernel的日志文件写信息。</p>
+<p>由于我们添加了新的源文件，为了将其链接进来。修改<code>kernel/Makefile</code>,将<code>plypy_hello.o</code>添加至obj-y的那个表中,完了是这样的。</p>
+<pre><code>obj-y     = fork<span class="class">.o</span> exec_domain<span class="class">.o</span> panic<span class="class">.o</span> \
+            cpu<span class="class">.o</span> exit<span class="class">.o</span> itimer<span class="class">.o</span> <span class="tag">time</span><span class="class">.o</span> softirq<span class="class">.o</span> resource<span class="class">.o</span> \
+            sysctl<span class="class">.o</span> sysctl_binary<span class="class">.o</span> capability<span class="class">.o</span> ptrace<span class="class">.o</span> timer<span class="class">.o</span> user<span class="class">.o</span> \
+            signal<span class="class">.o</span> sys<span class="class">.o</span> kmod<span class="class">.o</span> workqueue<span class="class">.o</span> pid<span class="class">.o</span> task_work<span class="class">.o</span> \
+            extable<span class="class">.o</span> params<span class="class">.o</span> posix-timers<span class="class">.o</span> \
+            kthread<span class="class">.o</span> sys_ni<span class="class">.o</span> posix-cpu-timers<span class="class">.o</span> \
+            hrtimer<span class="class">.o</span> nsproxy<span class="class">.o</span> \
+            notifier<span class="class">.o</span> ksysfs<span class="class">.o</span> cred<span class="class">.o</span> reboot<span class="class">.o</span> \
+            async<span class="class">.o</span> range<span class="class">.o</span> groups<span class="class">.o</span> smpboot<span class="class">.o</span> plypy_hello.o
+</code></pre><p>至此我们就可以编译内核啦。</p>
+<h2 id="内核编译">内核编译</h2><p>接下来返回所有源文件的根目录，开始编译</p>
+<p>首先把编译需要的东西下载了</p>
+<pre><code><span class="label">sudo</span> apt-<span class="preprocessor">get</span> install <span class="keyword">build-essential </span>libncurses5-dev
+</code></pre><p>配置</p>
+<pre><code><span class="built_in">make</span> menuconfig
+</code></pre><p>基本采取默认配置即可，可以在General—&gt;Local version处修改一下，方便区分自己搞的内核。(<strong>Update</strong>注意Local Version中不要使用奇怪的字符，不要有空格，因为它将来是要作为目录名的一部分的。) Save后,开始编译链接，之前开启了多个处理器的选项，所以可以使用多线程编译，-j(n)选项是使用n线程编译，差不多几个核就几线程吧。</p>
+<p><strong>MORE UPDATE</strong> 一些发行版（比如Ubuntu）会将当前使用的内核的配置文件放在<code>/boot/config-$(uname-r)</code>，可以考虑直接把那个拷贝过来用就好，即<code>cp /boot/config-$(uname-r) /YOURPATH/.config</code></p>
+<pre><code><span class="built_in">make</span> -j2
+</code></pre><p>编译是一个非常漫长的过程。。。至少对于我的渣电脑来说</p>
+<p><del>然后编译各个模块</del></p>
+<p><del>make modules -j2</del></p>
+<p><strong>Update</strong>: 经过夏赢家提点，我看了一下Makefile，在<code>make</code>的时候已经编译过了内核所以编译模块这一步是不需要的。</p>
+<p>安装模块及内核</p>
+<pre><code>sudo <span class="built_in">make</span> modules_install
+sudo <span class="built_in">make</span> install
+</code></pre><h2 id="测试">测试</h2><p>到这里就把内核安装好了，接下来重启一下，在启动的时候应该能看到Grub的启动菜单，选择之前编译好的linux3.16plypyhello就好，使用如下代码</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;sys/syscall.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="preprocessor">#<span class="keyword">define</span> SYS_PLYPY_HELLO 317</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    syscall(SYS_PLYPY_HELLO);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后编译运行</p>
+<pre><code>gcc testsyscall<span class="class">.c</span> -o tester
+./tester
+</code></pre><p>此时kernel的日志文件里应该多了一句”Ply_py says, Hello World!”,查看一下</p>
+<pre><code>dmesg
+</code></pre><p>就这样吧。</p>
+<h2 id="错误处理">错误处理</h2><p><strong>编译出错</strong>，这个错误只可能发生在之前修改的几个文件当中。我数次把kernel写成了kernal。。。</p>
+<p>修复完错误后需要重新编译，但得先清除上一次编译遗留的东西，由于我们的配置非常少所以不妨直接全部清除 <code>make distclean</code>,然后再重复编译的过程就可以了。具体可以参考帮助文档<code>make help</code></p>
+<p><strong>删除内核文件</strong>,有时会悲剧地编译通过后无法启动。。。把多余的内核放在有限的虚拟机空间里也不太好，可以去<code>/lib/modules/</code>,<code>/boot/</code>下删除掉之前生成的东西</p>
+<pre><code>sudo rm -rf <span class="keyword">*</span>plypyhello/ 
+</code></pre><p>然后更新一下Grub</p>
+<pre><code><span class="title">sudo</span> update-grub
+</code></pre><h2 id="总结">总结</h2><p>真tm吃力。。。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜尋">
+    <input type="hidden" name="q" value="site:pages.plypy.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分類</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Fun/">Fun</a><small>1</small></li>
+  
+    <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
+  
+    <li><a href="/categories/algorithm/">algorithm</a><small>1</small></li>
+  
+    <li><a href="/categories/life/">life</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">標籤</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/CF/">CF</a><small>1</small></li>
+  
+    <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>2</small></li>
+  
+    <li><a href="/tags/Mongoose/">Mongoose</a><small>1</small></li>
+  
+    <li><a href="/tags/Node-js/">Node.js</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenLDAP/">OpenLDAP</a><small>1</small></li>
+  
+    <li><a href="/tags/Shithole/">Shithole</a><small>1</small></li>
+  
+    <li><a href="/tags/Test/">Test</a><small>1</small></li>
+  
+    <li><a href="/tags/VHDL/">VHDL</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+  
+    <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
+  
+    <li><a href="/tags/auth/">auth</a><small>1</small></li>
+  
+    <li><a href="/tags/editorial/">editorial</a><small>1</small></li>
+  
+    <li><a href="/tags/emacs/">emacs</a><small>1</small></li>
+  
+    <li><a href="/tags/exports/">exports</a><small>1</small></li>
+  
+    <li><a href="/tags/fork/">fork</a><small>1</small></li>
+  
+    <li><a href="/tags/games/">games</a><small>1</small></li>
+  
+    <li><a href="/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="/tags/linux/">linux</a><small>1</small></li>
+  
+    <li><a href="/tags/network/">network</a><small>1</small></li>
+  
+    <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
+  
+    <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
+  
+    <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Weihua Cheung
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plypy';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

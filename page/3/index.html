@@ -1,0 +1,651 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>第 3 頁 | Pages of Ply_py</title>
+  <meta name="author" content="Weihua Cheung">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Pages of Ply_py"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Pages of Ply_py" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Pages of Ply_py</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-08-10T15:37:44.000Z"><a href="/2014/08/10/about-to-end/">Aug 10 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/08/10/about-to-end/">About to End</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Well the title should be “The 12th Week of GSoC”, if I went the usual way. Hahhhh, well, tomorrow will be the official soft pencil down date. It means, I need to stop coding, and working on perfecting documentations.</p>
+<p>It’s really been a great unforgettable experience, It’s my first time working on a real-life project, and first time to work for a open-source community, specifically such a great community that with such a noble objective. “Write codes, save lives”!</p>
+<p>Originally, I want to publish this blog later after I have done my final presentation. However it’s not done yet, and it’s close to the end of this week. I have to publish my weekly-blog.</p>
+<p>Anyway, the presentation will be done in tomorrow for sure.</p>
+<p>Well, summarize as usual.</p>
+<p>Done</p>
+<ol>
+<li>Fixed few issues, ID-48, ID-51, and working on ID-52, ID-55 now.</li>
+<li>Done the specification work for the RESTful APIs with Elliott(Well, most works is done by him, I’m not experienced…)</li>
+<li>Working on the final presentation.</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-08-02T18:56:13.000Z"><a href="/2014/08/03/the-11th-week-of-gsoc/">Aug 3 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/08/03/the-11th-week-of-gsoc/">The 11th Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Wow it’s almost close to the end of this years GSoC. So many exciting experiences, and new knowledge learnt.</p>
+<h3 id="The_OAuth">The OAuth</h3><p>Anyway, I’ve been working on the OAuth and the RESTful APIs this week. Yes, we used the OAuth 2.0 to achieve SSO service. As it is a widely-used protocol, it will be more easy for us to implement authorization logic for other OpenMRS apps.</p>
+<p>And also we plan to build a OAuth based RESTful API system. So we can open the access to the OpenMRS ID, however, we have very very very little information to share. But maybe in the future the Dashboard will have more information, and become a central data storage system. Apps can store the user related information in Dashboard, and let others to access. </p>
+<p>Well, that’s only my own vision about the far future.</p>
+<p>So, summarize briefly as usual!</p>
+<h3 id="What_I_Have_Done">What I Have Done</h3><ol>
+<li>Perfected the patch for ID-48, and learnt something new about the Mongoose.</li>
+<li>Learnt the OAuth 2.0 a bit, and began to refactor the OAuth module with Mongoose.</li>
+<li>Built the very prototype of the REST module.</li>
+</ol>
+<h3 id="ToDO">ToDO</h3><ol>
+<li>Complete the refactoring work of OAuth.</li>
+<li>Record my final presentation.</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-07-26T02:00:20.000Z"><a href="/2014/07/26/the-10th-week-of-gsoc/">Jul 26 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/07/26/the-10th-week-of-gsoc/">The 10th Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3 id="Announcement_for_Dashboard_2-0">Announcement for Dashboard 2.0</h3><p>Exciting week!!!</p>
+<p>After lots of testing and fixing, I’m proudly annoucing that the new Dashboard has been released. Check it out <a href="https://id.openmrs.org" target="_blank" rel="external">https://id.openmrs.org</a></p>
+<p>Well, the new Newdashboard hasn’t changed so much on the outside, so you may find no much differences. Except for the email selecting part of profile page. Most the chagnges have happened in the backend. We’ve replaced the data storage to Mongo, for more possibility in the future.</p>
+<p>However, I can’t say this upgrading is smooth. We’ve used lots of time on adapting to legacy datas. The new data model is somehow relatively easy to design and implement. But I have to change a lot for backward compatibility, and this process had spent lots of our time, about weeks.</p>
+<p>Anyway, briefly summarize.</p>
+<h3 id="Done">Done</h3><ol>
+<li>Collaborate with Elliott to deploy the 2.0.</li>
+<li>Fix some bugs of it.</li>
+<li>Checked and discussed the RESTful APIs with Elliott.</li>
+</ol>
+<h3 id="ToDo">ToDo</h3><ol>
+<li>RESTful APIs</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-07-20T05:53:10.000Z"><a href="/2014/07/20/the-9th-week-of-gsoc/">Jul 20 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/07/20/the-9th-week-of-gsoc/">The 9th Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3 id="Deployment">Deployment</h3><p>Oh, another week of delay… Deployment is somehow exciting and painful.</p>
+<p>In this week Elliott and I have tried to do a trial deployment on the staging server. However, we encountered lots of problems that delayed our schedule. Like duplicate emails we found earlier, and also updating other functional modules to adapt the new Dashboard.</p>
+<p>I updated the <a href="https://github.com/Plypy/OpenMRS-ID-Migrator" target="_blank" rel="external">Migrator</a>, and added a verifier for verifing the correctness of the migration, then made PRs for globalnavbar and sso module. And left oauth and groups module for Elliott to work on, sorry for that, but I really don’t know how to test these two…</p>
+<p>And after we tested the migrator separately on our own machine. Things should be fine now, we think… However, you know, another issue poped out. Last time, due to the famous heartbleed bug of OpenSSL, our people made a global password reset for all acount. Specifically, setting all accounts password as empty, as OpenLDAP won’t authenticate a user with empty password. And that is definitely a thing that I have never thought about :/</p>
+<p>Not only this, when I was checking this issue, I found that I used wrong password hashing algo, SHA rather than SSHA. And this is because of the different <code>slapd.conf</code> between production server and dev machine.</p>
+<p>So we created <a href="https://issues.openmrs.org/browse/ID-45" target="_blank" rel="external">ID-45</a> and <a href="https://issues.openmrs.org/browse/ID-46" target="_blank" rel="external">ID-46</a>.</p>
+<p>Anyhow, <strong>Summarize</strong>!!</p>
+<h3 id="What_I_Have_Done">What I Have Done</h3><ol>
+<li>Updated Migrator.</li>
+<li>Collaborated with Elliott to do a trial deployment of Dashboard 2.0 and solved lots of problems.</li>
+</ol>
+<h3 id="What_I_Will_Do">What I Will Do</h3><ol>
+<li>Finish the deployment.</li>
+<li>Learn RESTful APIs</li>
+</ol>
+<p>That’s it!</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-07-14T11:28:20.000Z"><a href="/2014/07/14/the-8th-week-of-gsoc/">Jul 14 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/07/14/the-8th-week-of-gsoc/">The 8th Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Briefly.</p>
+<p>What I Have Done</p>
+<ol>
+<li>Updated lots of dependecies, mainly about our main frame <code>express</code>. Now it’s using 3.0.</li>
+<li>Adopted <code>formage</code> as our admin panel for data.</li>
+<li>Tested 2-way sync via Syncrepl.</li>
+<li>Discussed about duplications with old accounts.</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-07-05T16:54:06.000Z"><a href="/2014/07/06/the-7th-week-of-gsoc/">Jul 6 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/07/06/the-7th-week-of-gsoc/">The 7th Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Summarizing!!! So, keep it brief.</p>
+<h3 id="What_I_Have_Done">What I Have Done</h3><ol>
+<li>Finished the sync work with OpenLDAP.</li>
+<li>Built a dynamic migrating solution for temparay usage.</li>
+<li>Built a simple migration script for migrating data from OpenLDAP to Mongo*, Here is the <a href="https://github.com/Plypy/OpenMRS-ID-Migrator" target="_blank" rel="external">repo</a></li>
+</ol>
+<h3 id="What_I_Will_Do">What I Will Do</h3><p>Deploy the Dashboard 2.0!.</p>
+<p>That’s it.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-07-03T13:40:15.000Z"><a href="/2014/07/03/the-openmrs-id-dashboard-20/">Jul 3 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/07/03/the-openmrs-id-dashboard-20/">The OpenMRS ID Dashboard 2.0</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Finally, after weeks of exploring and attempting, the new dashboard is nearly in place.</p>
+<p>The main purpose of Dashboard 2.0 is to provide a extendable user model for OpenMRS ID, so we used MongoDB as the backend database. Hence we can add some free-form data to database, as discussed and explained in these talks.
+<a href="https://talk.openmrs.org/t/gsoc-2014-openmrs-id-platform-improvements-midterm-presentation/321" target="_blank" rel="external">My Midterm presentation</a>
+<a href="https://talk.openmrs.org/t/api-data-model-design-discussion-free-form-data/282" target="_blank" rel="external">Disscussion </a></p>
+<h3 id="Concern_for_LDAP">Concern for LDAP</h3><p>While gaining the new features, we can’t leave the older behind. So for backward compatibility, we have to reserve a LDAP server, so those Atlassian Crowd based apps could be happy as usual. </p>
+<p>My original plan was to create a LDAP layer on top of the new user data model via <a href="http://ldapjs.org/" target="_blank" rel="external">ldapjs</a>. However, after some attempts, I found that its not feasible, or more accurately, efficient.
+So I turned to the sync plan. Specificly, we’ll remain the OpenLDAP server and sync with it. Although this sync is one-directional, that is, we can only sync the changes from MongoDB side to LDAP.</p>
+<p>For data migration, currently I don’t have a good idea, because I don’t know much about the production. So for quickly putting Dashboard 2.0 into production and test, I choosed a dynamic migration approach. In detail, I’ve bound a query of LDAP to one query method of Mongo, when I don’t find any record in Mongo I’ll query in LDAP, and if there is one in LDAP, I’ll copy that in Mongo.</p>
+<h3 id="New_Procedure_for_Signup">New Procedure for Signup</h3><p>I’ll demonstrate this in one diagram, see.</p>
+<p><img src="https://lh4.googleusercontent.com/-fk154LsyjMM/U7WFmJq69gI/AAAAAAAAAwg/z1MnsqJU4X4/w726-h565-no/OpenMRS-ID-Dashboard-Procedure.png" alt="Signup Procedure" title="Signup Procedure"></p>
+<h3 id="Something_about_Data_Model">Something about Data Model</h3><p>Our user related data models are very simple. We only have user and groups schema.</p>
+<p>Except from those basic attributes, 2 things need to be mention exclusively.</p>
+<h5 id="The_user-extra">The <code>user.extra</code></h5><p>it’s in <a href="http://mongoosejs.com/docs/api.html#schema-mixed-js" target="_blank" rel="external">Mixed</a> type. So you may treat it as a normal json object.</p>
+<p>In future, we’ll use that to store all kinds of other things other clients put into via our API. See this in detail,
+<a href="https://talk.openmrs.org/t/api-data-model-design-discussion-free-form-data/282" target="_blank" rel="external">Disscussion </a></p>
+<h5 id="The_relation_between_Groups_and_Users">The relation between <code>Groups</code> and <code>Users</code></h5><p>One user may be member of different groups, and each group has different users, so it’s a “many to many” relation.</p>
+<p>To manage relationship in Mongo*, just store the ObjectId of one doc into another, so you can easily reference each other</p>
+<p>But considering the number of groups will be small anyway, so for the sake of simplicity, I’ve just stored the group names in user docs.</p>
+<p>And to easily get all the members of one group, each group will have a <code>userList</code> array containing usernames and ObjectIds. Having usernames known, we don’t have to really query for users in most cases.</p>
+<p>However, Mongo* don’t have built-in mechanism to query the array belong to one document. But again, considering we won’t have too much users :|, I’ll just do a plain O(n) one by one search. No need to use any data structrue and algorthim, hahahahhhhhhh…</p>
+<p>That should be it.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-06-28T21:10:34.000Z"><a href="/2014/06/29/the-6th-week-of-gsoc/">Jun 29 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/06/29/the-6th-week-of-gsoc/">The 6th Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Time to summarize again.</p>
+<p>Well, I havn’t done many things this week… Because it’s the last week of this semester as well. I’ve been preparing my last final, and celebrating with my classmates after it.</p>
+<p>Anyway, here is the usual list.</p>
+<h3 id="What_I_Have_Done">What I Have Done</h3><ol>
+<li>Basically finished all the integration work.</li>
+<li>Created a prototype of the new <code>/profile</code> page. And here is the mockup.
+<img src="https://lh6.googleusercontent.com/-bKSR1XNCcZI/U7Ve0Lbrq8I/AAAAAAAAAvw/vi0ehBNEVBU/w867-h531-no/mockup.png" alt="mockup" title="mockup"></li>
+<li>Fixed few trivial bugs.</li>
+</ol>
+<h3 id="What_I_Will_Do">What I Will Do</h3><ol>
+<li>Make up all the validation work.</li>
+<li>Start to work on <code>ldapjs</code>.</li>
+</ol>
+<p>That’s it.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-06-21T10:19:37.000Z"><a href="/2014/06/21/the-5th-week-of-gsoc/">Jun 21 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/06/21/the-5th-week-of-gsoc/">The 5th Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>It’s the 5th week, the last week before the middle term evaluation.</p>
+<p>Oh… I’m exhausted, just having recorded my midterm presentations. It costed me about 1 wholed day to make the ppt, and 4 hours to record the video… Well my English is bad, so I have to retake it again and again. Even though the outcome isn’t very well, because after long time of working and speaking, I made my voice hoarse, my mind stupid…</p>
+<p>You can see my presentaion <a href="https://talk.openmrs.org/t/gsoc-2014-openmrs-id-platform-improvements-midterm-presentation/321" target="_blank" rel="external">here</a>.</p>
+<p>Anyway let’s sum up this week.</p>
+<h3 id="What_I_Have_Done">What I Have Done</h3><ol>
+<li>Completed the integration work with signup module and new data model.</li>
+<li>Integrated the new data model with the auth module.</li>
+<li>Built new model for verification.</li>
+<li>Used the new model to reimplement the email-verification work.</li>
+<li>Made a middle term presentaion, see above.</li>
+</ol>
+<h3 id="What_I_Will_Do">What I Will Do</h3><ol>
+<li>Complete the integration work for reset-pwd and profile module.</li>
+<li>Figure out how to migrate data.</li>
+<li>Fix some issues maybe.</li>
+</ol>
+<p>That’s it, I need to sleep.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-06-14T11:56:26.000Z"><a href="/2014/06/14/the-4th-week-of-gsoc/">Jun 14 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/06/14/the-4th-week-of-gsoc/">The 4th Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Let’s sum up the 4th week of GSoC!!! </p>
+<p>First, another hard one, I’ve used a lot of time to fix bug of some async logic. :/</p>
+<h3 id="What_I_Have_Done">What I Have Done</h3><ol>
+<li><p>Roughly finished the work of integrating the new Mongo<em> data model with the signup module. Now you can create new account in Mongo</em>, but you can’t log in yet…</p>
+</li>
+<li><p>Fixed the <a href="https://issues.openmrs.org/browse/ID-6" target="_blank" rel="external">ID-6</a>. Small defect about the login hint message, easy to fix, just adding a link will be fine. But I think there is still some room for improvement. Maybe when user filled out the form, they can be redirected to the original page. Or simply make it default to open a new page for that link, since there is still the verification work.</p>
+</li>
+<li><p>Fixed the <a href="https://issues.openmrs.org/browse/ID-14" target="_blank" rel="external">ID-14</a>, which is about the verification email. The old dashboard will sent the verification email, even if the account isn’t got created. This can be easily solved by using <a href="https://github.com/caolan/async" target="_blank" rel="external">async</a> library. Just simply using <a href="https://github.com/caolan/async#seriestasks-callback" target="_blank" rel="external">async.series()</a> will do the trick.</p>
+</li>
+<li><p>Reimplemented the validation middleware for signup module. Again, by using <a href="https://github.com/caolan/async" target="_blank" rel="external">async</a>, the whole control flow is clearer now. I’ve spent most of my time on that, because I made some rookie mistakes on writing async code in Node.js.</p>
+</li>
+<li><p>Created and fixed the <a href="https://issues.openmrs.org/browse/ID-29" target="_blank" rel="external">ID-29</a>. This issue is about the reuse of typed values of validation form. If the user typed some wrong values, the old dashboard won’t cache them, so user have to type them again. Small bugs, but annoying.</p>
+</li>
+</ol>
+<h3 id="What_I_Will_Do">What I Will Do</h3><ol>
+<li><p>Complet the work of signup module, and march on auth(login logout) and profile module.</p>
+</li>
+<li><p>Continue improve the validation code.</p>
+</li>
+<li><p>Fix some more issues.</p>
+</li>
+<li><p>Test the Mongoose to see whether is possible for users to change the schema when the server is running. And whether that is a good idea… For details you can see this <a href="https://talk.openmrs.org/t/api-data-model-design-discussion-free-form-data/282" target="_blank" rel="external">talk</a> posted by Elliott.</p>
+</li>
+</ol>
+<p>That’s it.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+
+<nav id="pagination">
+  
+    <a href="/page/2/" class="alignleft prev">上一頁</a>
+  
+  
+    <a href="/page/4/" class="alignright next">下一頁</a>
+  
+  <div class="clearfix"></div>
+</nav></div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜尋">
+    <input type="hidden" name="q" value="site:pages.plypy.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分類</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Fun/">Fun</a><small>1</small></li>
+  
+    <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
+  
+    <li><a href="/categories/algorithm/">algorithm</a><small>1</small></li>
+  
+    <li><a href="/categories/life/">life</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">標籤</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/CF/">CF</a><small>1</small></li>
+  
+    <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>2</small></li>
+  
+    <li><a href="/tags/Mongoose/">Mongoose</a><small>1</small></li>
+  
+    <li><a href="/tags/Node-js/">Node.js</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenLDAP/">OpenLDAP</a><small>1</small></li>
+  
+    <li><a href="/tags/Shithole/">Shithole</a><small>1</small></li>
+  
+    <li><a href="/tags/Test/">Test</a><small>1</small></li>
+  
+    <li><a href="/tags/VHDL/">VHDL</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+  
+    <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
+  
+    <li><a href="/tags/auth/">auth</a><small>1</small></li>
+  
+    <li><a href="/tags/editorial/">editorial</a><small>1</small></li>
+  
+    <li><a href="/tags/emacs/">emacs</a><small>1</small></li>
+  
+    <li><a href="/tags/exports/">exports</a><small>1</small></li>
+  
+    <li><a href="/tags/fork/">fork</a><small>1</small></li>
+  
+    <li><a href="/tags/games/">games</a><small>1</small></li>
+  
+    <li><a href="/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="/tags/linux/">linux</a><small>1</small></li>
+  
+    <li><a href="/tags/network/">network</a><small>1</small></li>
+  
+    <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
+  
+    <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
+  
+    <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Weihua Cheung
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plypy';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

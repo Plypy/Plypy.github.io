@@ -1,0 +1,299 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>OSLAB Notes4 | Pages of Ply_py</title>
+  <meta name="author" content="Weihua Cheung">
+  
+  <meta name="description" content="这个实验的要求是利用linux的字符设备（char devices）创建一个类似管道（pipe）的媒介以供进程间进行通信。
+我主要参考了Linux Devices Drivers， Third Edition（LDD3）这本书，有关字符设备的内容在第三章以及第六章，另外该书的源码在github上有，">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="OSLAB Notes4"/>
+  <meta property="og:site_name" content="Pages of Ply_py"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Pages of Ply_py" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Pages of Ply_py</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-04-10T16:05:52.000Z"><a href="/2015/04/11/OSLAB-Notes4/">Apr 11 2015</a></time>
+      
+      
+  
+    <h1 class="title">OSLAB Notes4</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>这个实验的要求是利用linux的字符设备（char devices）创建一个类似管道（pipe）的媒介以供进程间进行通信。</p>
+<p>我主要参考了Linux Devices Drivers， Third Edition（<a href="https://lwn.net/Kernel/LDD3/" target="_blank" rel="external">LDD3</a>）这本书，有关字符设备的内容在第三章以及第六章，另外该书的源码在github上有，<a href="https://github.com/csl/lld3-example/" target="_blank" rel="external">here</a>。愿意深入研究的同学可以去看一下。（<strong>注意：LDD3针对的是2.6，如果使用的是3.x版本需要修改一些地方，我的Ubuntu是3.13</strong>）</p>
+<p>完成这个实验，主要需要两方面的知识，一是Linux的字符设备的相关函数，二是如何利用信号量来进行同步。省事起见，我的代码很多细节都没有考虑，完全是为了达到实验效果而写:)</p>
+<h2 id="字符设备">字符设备</h2><p>Linux将所有的外设都包装为文件来进行处理，这样能极大方便用户态的程序，使用现成的文件操作就可以与外设进行交互。为了包装成文件，需要提供相应的一些操作，如文件的打开，关闭，读写等。在内核中定义了这样的一个结构file_operations，通过其成员可以为一个文件提供各种操作，如其<code>read</code>成员负责着文件的读取，具体的可以参考LDD3 ch03。若为了完成本次实验的效果，只需要使用<code>read</code>和<code>write</code>就好。</p>
+<p>读操作函数形式为，<code>ssize_t (*read) (struct file *, char __user *, size_t, loff_t *);</code>
+写操作函数形式为，<code>ssize_t (*write) (struct file *, const char __user *, size_t, loff_t *);</code>
+这里第一个参数为在内核中文件的指针；第二个参数为用户态程序提供的用来交互的buffer，我们向其中读写；第三个参数为用户态希望读写的长度；第四个则是偏移量。</p>
+<p>在定义了我们的操作后，需要将其与设备关联起来，并且在内核中注册。设备有major number和minor number两个标号，major区分着设备的类型，而由于同一类型的设备可能有多种，需要使用minor来进行区分。这里我们不管minor，只实现一个就好。注册字符设备可以使用两种方法，LDD3上推荐使用的新方法比较麻烦，需要申请、注册、各种初始化，不表。我们使用老方法。</p>
+<p>注册<code>int register_chrdev(unsigned int major, const char *name, struct file_operations *fops);</code></p>
+<p>注销<code>int unregister_chrdev(unsigned int major, const char *name);</code></p>
+<p>注册时可以直接硬编码一个major，但是这样可能会出现冲突等问题。我们可以令major为0，<code>register_chrdev</code>会为我们返回注册到的号，使用printk将其输出即可。注意，注册后并不会在文件系统中生成文件，需要另外编码，或者在用户态中使用<code>mknod</code>。简单起见，我们使用后者。</p>
+<h2 id="同步">同步</h2><p>因为多个进程要同时操作一个文件，这会带来竞争问题。我们可以使用信号量以及睡眠/唤醒机制来控制文件的同步。这里具体可以参考LDD3 ch06。</p>
+<h4 id="信号量">信号量</h4><p>信号量semaphore，其定义在<code>&lt;linux/semaphore.h&gt;</code>内。我们只需要以下的几种操作：</p>
+<p>初始化
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> semaphore sem; </span><br><span class="line">sema_init(&amp;sem,<span class="number">1</span>);	<span class="comment">//将sem初始化为1，即一个mutex</span></span><br></pre></td></tr></table></figure></p>
+<p>P操作 <code>down_interruptible(&amp;sem)</code>,V操作<code>up(&amp;sem)</code>。（down_interruptible，故名思议，允许在函数执行时发生中断，不解释细节,下同）</p>
+<h4 id="睡眠/唤醒">睡眠/唤醒</h4><p>当某资源不可用时，我们可以通过令进程进入睡眠态来阻塞进程，而后将其唤醒，这样能使得效率高一些。</p>
+<p>唤醒的时候存在这样一个问题，我们需要知道去哪找那些睡着了的进程，也就是说需要存储下来睡眠态的进程。内核提供了<code>wait_queue_head_t</code>这样的一种数据结构用以存储睡眠的进程。其初始化方法为<code>init_waitqueue_head(&amp;que)</code>。</p>
+<p>当我们希望一个进程睡眠时，可以使用<code>wait_event_interruptible(que, condition)</code>来将其放入<code>que</code>中以备将来唤醒。这里的condition可以是任意的表达式，其作用相当于循环中的入口条件，开始时当condition不满足时进程会进入睡眠，当其被唤醒后会再次检查condition若仍不满足会继续睡眠。这里就很迷惑了，函数是按值传递的，condition怎么还能这样用，还可以检测它变动的值？其实看源码的话会发现，<code>wait_event_interruptible</code>是一个宏函数，它会被展开成相应的条件循环逻辑。</p>
+<p>换行时使用<code>wake_up_interruptible(&amp;que)</code>，其会将<code>que</code>中的所有使用<code>wait_event_interruptible</code>放入的进程唤醒。</p>
+<h2 id="制作管道">制作管道</h2><p>有了以上的预备知识后，也就能开始搞我们的程序了(buggy)。</p>
+<p>为了尽量简单，我们将存储的buffer，以及等待队列等数据结构都只做一份全局的，因为我们只需要一个设备。注册模块的时候完成各种初始化以及字符设备的注册，并将注册到的major号输出出来以备使用。</p>
+<p>具体数据结构如下,
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">struct plypy_pipe &#123;&#10;    wait_queue_head_t inq, outq;       /* read and write queues */&#10;    char buffer[MAXN], *end;           /* static buffer */&#10;    char *wp;                          /* where the data ends */&#10;    struct semaphore sem;              /* mutual exclusion semaphore */&#10;&#125;;</span><br></pre></td></tr></table></figure></p>
+<p><code>inq</code>,<code>outq</code>分别用来存储读/写的进程。<code>buffer</code>数组用来存储数据，<code>end</code>是一个辅助的变量用来标记buffer的末尾。<code>wp</code>用来标记buffer数据的末尾，可以用来判断<code>buffer</code>是否为空。<code>sem</code>则为一个信号量。</p>
+<p>简单起见，我们的读写逻辑是这样的。<code>buffer</code>中只存储一次写的数据，不支持连续写，不支持连续读。即只有在<code>buffer</code>为空的时候，才可以再写入下一个数据；只有在<code>buffer</code>中有数据的时候，才能读取数据，并且每次读取完毕后将其设为空。可以看出我们的管道只支持‘写读写读写读……’这样的操作序列，并且每次数据的传输都是从某一个写进程传向某一个读进程，并非广播。</p>
+<p>在读写数据时，涉及到一次数据从内核到用户的传输，需要使用<code>copy_to_user</code>，<code>copy_from_user</code>两个函数来完成。</p>
+<p>读写的流程也比较简单，不再赘述，直接看源码吧，如下：
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Create a virtual char devices</span><br><span class="line"> **/</span></span><br><span class="line"></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/module.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/kernel.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/init.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/fs.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/semaphore.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/types.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/wait.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/cdev.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/sched.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;asm/uaccess.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="preprocessor">#<span class="keyword">define</span> MAXN 1024</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">define</span> PLYPY_DEV_NAME "plypy_chrdev"</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/* static int plypy_dev_open(struct inode *, struct file *filp); */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> ssize_t <span class="title">plypy_dev_read</span><span class="params">(<span class="keyword">struct</span> file *, <span class="keyword">char</span> *, size_t, loff_t *)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">static</span> ssize_t <span class="title">plypy_dev_write</span><span class="params">(<span class="keyword">struct</span> file *, <span class="keyword">const</span> <span class="keyword">char</span> *, size_t, loff_t *)</span></span>;</span><br><span class="line"><span class="comment">/* static int plypy_dev_release(struct inode *, struct file *filp); */</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> file_operations fops =</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">/* .open = plypy_dev_open, */</span></span><br><span class="line">    <span class="comment">/* .release = plypy_dev_release, */</span></span><br><span class="line">    .read = plypy_dev_read,</span><br><span class="line">    .write = plypy_dev_write</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> Major;</span><br><span class="line"><span class="keyword">struct</span> plypy_pipe &#123;</span><br><span class="line">    <span class="keyword">wait_queue_head_t</span> inq, outq;       <span class="comment">/* read and write queues */</span></span><br><span class="line">    <span class="keyword">char</span> buffer[MAXN], *end;           <span class="comment">/* static buffer */</span></span><br><span class="line">    <span class="keyword">char</span> *wp;                          <span class="comment">/* where the data ends */</span></span><br><span class="line">    <span class="keyword">struct</span> semaphore sem;              <span class="comment">/* mutual exclusion semaphore */</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">struct</span> plypy_pipe plypy_pipe;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">struct</span> plypy_pipe *dev = &amp;plypy_pipe;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> ssize_t <span class="title">plypy_dev_read</span><span class="params">(<span class="keyword">struct</span> file *filp, <span class="keyword">char</span> __user *buf, size_t count,</span><br><span class="line">                              loff_t *offset)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (down_interruptible(&amp;dev-&gt;sem))</span><br><span class="line">        <span class="keyword">return</span> -ERESTARTSYS;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* There may be multiple readers, so the use of loop is necessary */</span></span><br><span class="line">    <span class="keyword">while</span> (dev-&gt;buffer == dev-&gt;wp) &#123; <span class="comment">/* nothing to read, wait for inputs */</span></span><br><span class="line">        up(&amp;dev-&gt;sem);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (wait_event_interruptible(dev-&gt;inq, (dev-&gt;buffer != dev-&gt;wp)))</span><br><span class="line">            <span class="keyword">return</span> -ERESTARTSYS;</span><br><span class="line">        <span class="comment">/* Loop and reacquire the lock */</span></span><br><span class="line">        <span class="keyword">if</span> (down_interruptible(&amp;dev-&gt;sem))</span><br><span class="line">            <span class="keyword">return</span> -ERESTARTSYS;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* read data */</span></span><br><span class="line">    count = min(count, (<span class="keyword">size_t</span>)(dev-&gt;wp - dev-&gt;buffer));</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">copy_t</span>o_user(buf, dev-&gt;buffer, count)) &#123;</span><br><span class="line">        <span class="comment">/* error happened */</span></span><br><span class="line">        up(&amp;dev-&gt;sem);</span><br><span class="line">        <span class="keyword">return</span> -EFAULT;</span><br><span class="line">    &#125;</span><br><span class="line">    dev-&gt;wp = dev-&gt;buffer;</span><br><span class="line">    up(&amp;dev-&gt;sem);</span><br><span class="line"></span><br><span class="line">    wake_up_interruptible(&amp;dev-&gt;outq);</span><br><span class="line">    <span class="keyword">return</span> count;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> ssize_t <span class="title">plypy_dev_write</span><span class="params">(<span class="keyword">struct</span> file *filp, <span class="keyword">const</span> <span class="keyword">char</span> __user *buf,</span><br><span class="line">                               size_t count, loff_t *offset)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (down_interruptible(&amp;dev-&gt;sem))</span><br><span class="line">        <span class="keyword">return</span> -ERESTARTSYS;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (dev-&gt;buffer != dev-&gt;wp) &#123; <span class="comment">/* the old data haven't been retrieved */</span></span><br><span class="line">        up(&amp;dev-&gt;sem);</span><br><span class="line">        <span class="keyword">if</span> (wait_event_interruptible(dev-&gt;outq, (dev-&gt;buffer == dev-&gt;wp)))</span><br><span class="line">            <span class="keyword">return</span> -ERESTARTSYS;</span><br><span class="line">        <span class="comment">/* P and loop again */</span></span><br><span class="line">        <span class="keyword">if</span> (down_interruptible(&amp;dev-&gt;sem))</span><br><span class="line">            <span class="keyword">return</span> -ERESTARTSYS;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    count = min(count, (<span class="keyword">size_t</span>)( dev-&gt;end - dev-&gt;buffer ));</span><br><span class="line">    <span class="keyword">if</span> (copy_from_user(dev-&gt;buffer, buf, count)) &#123;</span><br><span class="line">        <span class="comment">/* error happened */</span></span><br><span class="line">        up(&amp;dev-&gt;sem);</span><br><span class="line">        <span class="keyword">return</span> -EFAULT;</span><br><span class="line">    &#125;</span><br><span class="line">    dev-&gt;wp += count;</span><br><span class="line">    up(&amp;dev-&gt;sem);</span><br><span class="line">    wake_up_interruptible(&amp;dev-&gt;inq);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> count;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">plypy_init</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    plypy_pipe.end = dev-&gt;buffer+MAXN;</span><br><span class="line">    plypy_pipe.wp = dev-&gt;buffer;</span><br><span class="line">    init_waitqueue_head(&amp;dev-&gt;inq);</span><br><span class="line">    init_waitqueue_head(&amp;dev-&gt;outq);</span><br><span class="line">    sema_init(&amp;dev-&gt;sem, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    Major = register_chrdev(<span class="number">0</span>, PLYPY_DEV_NAME, &amp;fops);</span><br><span class="line">    <span class="keyword">if</span> (Major &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> Major;</span><br><span class="line">    &#125;</span><br><span class="line">    printk(KERN_INFO <span class="string">"The %s is assigned major number %d"</span>,</span><br><span class="line">           PLYPY_DEV_NAME, Major);</span><br><span class="line">    printk(KERN_INFO <span class="string">"Use 'mknod /dev/%s c %d 0' to create a file"</span>,</span><br><span class="line">           PLYPY_DEV_NAME, Major);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">plypy_exit</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    unregister_chrdev(Major, PLYPY_DEV_NAME);</span><br><span class="line">    printk(KERN_INFO <span class="string">"The %s is destroyed"</span>, PLYPY_DEV_NAME);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">module_init(plypy_init);</span><br><span class="line">module_exit(plypy_exit);</span><br><span class="line"></span><br><span class="line">MODULE_LICENSE(<span class="string">"GPL"</span>);</span><br></pre></td></tr></table></figure></p>
+<h2 id="编译&amp;测试">编译&amp;测试</h2><p>我使用的是如下的Makefile进行的测试
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">source := plypy&#10;cdevname := plypy_chrdev&#10;major := $(shell awk -v mod=&#39;$(cdevname)&#39; &#39;$$2==mod&#123;print $$1&#125;&#39; /proc/devices)&#10;&#10;ifneq ($(KERNELRELEASE),)&#10;&#9;obj-m:=$(source).o&#10;else&#10;&#9;KERNELDIR:=/lib/modules/$(shell uname -r)/build&#10;&#9;PWD:=$(shell pwd)&#10;endif&#10;build:&#10;&#9;$(MAKE) -C $(KERNELDIR) M=$(PWD) modules&#10;&#10;install:&#10;&#9;insmod $(source).ko&#10;&#9;mknod /dev/$(cdevname) c $(major) 0&#10;&#10;remove:&#10;&#9;rmmod $(source)&#10;&#9;rm /dev/$(cdevname)&#10;&#10;clean:&#10;&#9;rm modules.order Module.symvers *.ko *.o</span><br></pre></td></tr></table></figure></p>
+<p><code>source</code>这里是你的源文件的名字（无后缀），<code>cdevname</code>是注册字符设备时使用的名字，需要通过它在<code>/proc/devices</code>里找刚刚我们的设备注册到的major。</p>
+<p>在root下依次执行如下命令，编译安装模块并创建字符设备文件。
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">#make build&#10;#make install</span><br></pre></td></tr></table></figure></p>
+<p>接下来可以用<code>cat</code>和<code>echo</code>来测试，开启一个终端执行<code>#cat /dev/plypy_chrdev</code>，在另一个终端下不断用<code>echo</code>写入数据，如下：
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">#echo 20 &#62; /dev/plypy_chrdev&#10;#echo 30 &#62; /dev/plypy_chrdev</span><br></pre></td></tr></table></figure></p>
+<p>可以看到每次写入后，均会在<code>cat</code>中出现。</p>
+<p>若要编程测试的话也比较简单，无非就是一端<code>read</code>，一端<code>write</code>。</p>
+<p>读程序
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdio.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdlib.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;string.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;sys/stat.h&gt;           /* O_RDWR */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;unistd.h&gt;             /* read/write */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;fcntl.h&gt;              /* open */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">define</span> MAXN 128</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">char</span> buffer[MAXN];</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> fd = open(<span class="string">"/dev/plypy_chrdev"</span>, O_RDWR);</span><br><span class="line">    <span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Read something?"</span>);</span><br><span class="line">        <span class="built_in">memset</span>(buffer, <span class="number">0</span>, <span class="keyword">sizeof</span>(buffer));</span><br><span class="line">        <span class="keyword">while</span> (getchar() != <span class="string">'\n'</span>) <span class="comment">/* eat it all */</span></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        read(fd, buffer, MAXN-<span class="number">1</span>);</span><br><span class="line">        <span class="built_in">puts</span>(buffer);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>写程序
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdio.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdlib.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;string.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;sys/stat.h&gt;           /* O_RDWR */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;unistd.h&gt;             /* read/write */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;fcntl.h&gt;              /* open */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">define</span> MAXN 128</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">char</span> buffer[MAXN];</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> fd = open(<span class="string">"/dev/plypy_chrdev"</span>, O_RDWR);</span><br><span class="line">    <span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Write something:\n"</span>);</span><br><span class="line">        <span class="built_in">memset</span>(buffer, <span class="number">0</span>, <span class="keyword">sizeof</span>(buffer));</span><br><span class="line">        gets(buffer);</span><br><span class="line">        write(fd, buffer, <span class="built_in">strlen</span>(buffer)+<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>编译后在root下执行即可。</p>
+<h2 id="End">End</h2><p>就这样</p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/LerningNotes/">LerningNotes</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">留言</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://pages.plypy.com/2015/04/11/OSLAB-Notes4/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜尋">
+    <input type="hidden" name="q" value="site:pages.plypy.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分類</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Fun/">Fun</a><small>1</small></li>
+  
+    <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
+  
+    <li><a href="/categories/algorithm/">algorithm</a><small>1</small></li>
+  
+    <li><a href="/categories/life/">life</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">標籤</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/CF/">CF</a><small>1</small></li>
+  
+    <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>2</small></li>
+  
+    <li><a href="/tags/Mongoose/">Mongoose</a><small>1</small></li>
+  
+    <li><a href="/tags/Node-js/">Node.js</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenLDAP/">OpenLDAP</a><small>1</small></li>
+  
+    <li><a href="/tags/Shithole/">Shithole</a><small>1</small></li>
+  
+    <li><a href="/tags/Test/">Test</a><small>1</small></li>
+  
+    <li><a href="/tags/VHDL/">VHDL</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+  
+    <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
+  
+    <li><a href="/tags/auth/">auth</a><small>1</small></li>
+  
+    <li><a href="/tags/editorial/">editorial</a><small>1</small></li>
+  
+    <li><a href="/tags/emacs/">emacs</a><small>1</small></li>
+  
+    <li><a href="/tags/exports/">exports</a><small>1</small></li>
+  
+    <li><a href="/tags/fork/">fork</a><small>1</small></li>
+  
+    <li><a href="/tags/games/">games</a><small>1</small></li>
+  
+    <li><a href="/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="/tags/linux/">linux</a><small>1</small></li>
+  
+    <li><a href="/tags/network/">network</a><small>1</small></li>
+  
+    <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
+  
+    <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
+  
+    <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Weihua Cheung
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plypy';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

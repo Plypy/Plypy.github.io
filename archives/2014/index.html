@@ -1,0 +1,734 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>彙整：2014 | Pages of Ply_py</title>
+  <meta name="author" content="Weihua Cheung">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Pages of Ply_py"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Pages of Ply_py" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Pages of Ply_py</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+<h2 class="archive-title">2014</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-12-12T13:02:04.000Z"><a href="/2014/12/12/OSLAB-notes-2/">Dec 12 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/12/12/OSLAB-notes-2/">OSLAB notes 2</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>This time, we are asked to play with the <code>fork()</code>, <code>signal()</code>, <code>kill()</code> and some other POSIX APIs related with process control and communication.</p>
+<h2 id="Fork_and_pass_signal">Fork and pass signal</h2><p>The first task is to use <code>fork</code> to create 2 child-processes and then use soft interrupt (signal) to make interprocess communication.</p>
+<h3 id="Fork">Fork</h3><p>Well, first of all you need to create 2 child-processes. And how to achieve that, this?
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pid1 = fork();</span><br><span class="line">pid2 = fork();</span><br></pre></td></tr></table></figure></p>
+<p>Well, young man, you’re simply naiveeee.</p>
+<p>Before making further explanation, you’d better run this code yourself.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pid_t</span> pid1, pid2;</span><br><span class="line">pid1 = fork();</span><br><span class="line">pid2 = fork();</span><br><span class="line"><span class="built_in">printf</span>(<span class="string">"The father %d created, pid1: %d \t pid2: %d\n"</span>, getpid(), pid1, pid2);</span><br></pre></td></tr></table></figure>
+<p>The output goes like this,</p>
+<pre><code>The father <span class="number">6281</span> created, <span class="string">pid1:</span> <span class="number">6282</span>     <span class="string">pid2:</span> <span class="number">6283</span>
+The father <span class="number">6282</span> created, <span class="string">pid1:</span> <span class="number">0</span>        <span class="string">pid2:</span> <span class="number">6284</span>
+The father <span class="number">6284</span> created, <span class="string">pid1:</span> <span class="number">0</span>        <span class="string">pid2:</span> <span class="number">0</span>
+The father <span class="number">6283</span> created, <span class="string">pid1:</span> <span class="number">6282</span>     <span class="string">pid2:</span> <span class="number">0</span>
+</code></pre><p>Strange, huh? There is 4 processes created, rather than 3 that we expected; and the child process 6282 has also created one process 6284.</p>
+<p>Well, let’s explain this. The <code>fork</code> will create a duplicate of the running process, and the process created will be the child of the original process. Since the child is a replica, it will have the same local variables ,same PC(program counter) and a bunch of other stuff you may see its <a href="http://man7.org/linux/man-pages/man2/fork.2.html" target="_blank" rel="external">man page</a> for details.</p>
+<p>See the child and the parent processes are almost identical, the child will have the same PC as the parent’s, which means, it will continue to execute the code after where <code>fork</code> is called. And that is the reason of the “wrong” behavior we have above. The execution flow goes like this.</p>
+<hr>
+<ol>
+<li>Parent 6281 created child 6282, then 6281 &amp; 6282 will continue to execute <code>pid2 = fork()</code></li>
+<li>6281 created another child 6283, while child 6282 also created one child of its own, 6284.</li>
+</ol>
+<hr>
+<p>Then how shall we distinguish the child and the parent? Notice that some pids are 0. After <code>fork</code> returned the child and the parent will receive 2 different value. The parent will get the pid of its child, meanwhile the child will have a 0. Also -1 for failed duplicate. And we can work on that.</p>
+<h3 id="Signal_and_Kill">Signal and Kill</h3><p>In this task, we used software interrupt to achieve interprocess communication.
+That is, one process listen for a specific signal (interrupt) and then the other one send that signal. These are done by <code>signal</code> and <code>kill</code> respectively.</p>
+<p>The <code>signal(signum, handler)</code> will bind the specified signal with id <code>signum</code> with the handler function <code>handler</code>. And <code>kill(pid, sig)</code> will send signal <code>sig</code> to process <code>pid</code>.</p>
+<h3 id="Design">Design</h3><p>Then everything is simple, as the task asked us to let the parent listen for keyboard interrupt and then send signal to kill the children. We shall simply let the parent listen to the <code>SIGINT</code>, and then bind a handler function that will send signals to the 2 children, the children then wait for the signals to commit suicide.</p>
+<p>However, there are few things to note.</p>
+<h3 id="Notes">Notes</h3><p>The guide provided is… well, it made few mistakes. Only on some specific OS the <code>break</code> and <code>delete</code> will generate the <code>SIGINT</code>, mostly it’s for <code>Ctrl+c</code>. And since we are using <code>SIGINT</code>, it’s vital to overwrite the orignal handler for it. Or it will cause the processes to terminate, though the outcome is same, it’s not what we want.</p>
+<p>All in all, it’s my code below.
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Author: Ply_py</span><br><span class="line"> * OSLAB: fork and signal passing</span><br><span class="line"> */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdio.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;signal.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;unistd.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;sys/types.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdlib.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">killer</span><span class="params">(<span class="keyword">int</span>)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">suicide</span><span class="params">(<span class="keyword">int</span>)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pid_t</span> pid1, pid2;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span></span><br><span class="line"><span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">int</span> *argv[])</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="comment">// make all process of this group ignore the normal soft interrupt</span></span><br><span class="line">    signal(SIGINT, SIG_IGN);</span><br><span class="line">    <span class="comment">// create child process 1</span></span><br><span class="line">    <span class="keyword">while</span> (-<span class="number">1</span> == (pid1 = fork())) <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (pid1 &gt; <span class="number">0</span>) &#123; <span class="comment">// parent</span></span><br><span class="line">        <span class="comment">// create child process 2</span></span><br><span class="line">        <span class="keyword">while</span> (-<span class="number">1</span> == (pid2 = fork())) <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (pid2 &gt; <span class="number">0</span>) &#123; <span class="comment">// parent</span></span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"Parent: %ld\t Child1: %ld\t Child2: %ld\n"</span>,</span><br><span class="line">                (<span class="keyword">long</span>) getpid(), (<span class="keyword">long</span>) pid1, (<span class="keyword">long</span>) pid2);</span><br><span class="line"></span><br><span class="line">            signal(SIGINT, killer);</span><br><span class="line">            <span class="comment">// wait for death of 2 children</span></span><br><span class="line">            wait(<span class="number">0</span>);</span><br><span class="line">            wait(<span class="number">0</span>);</span><br><span class="line">            <span class="built_in">puts</span>(<span class="string">"The parent has killed his children"</span>);</span><br><span class="line">            <span class="built_in">exit</span>(EXIT_SUCCESS);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123; <span class="comment">// child 2</span></span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">"child 2: %ld created\n"</span>, (<span class="keyword">long</span>) getpid());</span><br><span class="line">            signal(<span class="number">16</span>, suicide);</span><br><span class="line">            <span class="keyword">while</span> (<span class="number">1</span>) sleep(<span class="number">5</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123; <span class="comment">// child 1</span></span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"child 1: %ld created\n"</span>, (<span class="keyword">long</span>) getpid());</span><br><span class="line">        signal(<span class="number">17</span>, suicide);</span><br><span class="line">        <span class="keyword">while</span> (<span class="number">1</span>) sleep(<span class="number">5</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"I, %ld can get here\n"</span>, (<span class="keyword">long</span>) getpid());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span></span><br><span class="line"><span class="title">killer</span><span class="params">(<span class="keyword">int</span> signum)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">static</span> counter = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"process %ld catching signal %d\n"</span>, (<span class="keyword">long</span>) getpid(), signum);</span><br><span class="line">    <span class="keyword">if</span> (<span class="number">0</span> == counter) &#123;</span><br><span class="line">        kill(pid1, <span class="number">17</span>); <span class="comment">// kill child 1</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        kill(pid2, <span class="number">16</span>); <span class="comment">// kill child 2</span></span><br><span class="line">    &#125;</span><br><span class="line">    ++counter;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span></span><br><span class="line"><span class="title">suicide</span><span class="params">(<span class="keyword">int</span> signum)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"Process %ld is committing suicide, by signal %d\n"</span>,</span><br><span class="line">        (<span class="keyword">long</span>) getpid(), signum);</span><br><span class="line">    <span class="built_in">exit</span>(EXIT_SUCCESS);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="Pipe">Pipe</h2><p>The task 2 demand us to implement another interprocess communication via <code>pipe</code>.</p>
+<p>Well it’s rather easy, as we already got here. Use <a href="http://man7.org/linux/man-pages/man2/pipe.2.html" target="_blank" rel="external">pipe</a> to create a communication tunnel, and use that to pass messages. But notice there are 2 process writing to that pipe concurently, so proper lock is needed. Check <a href="http://man7.org/linux/man-pages/man3/lockf.3.html" target="_blank" rel="external">lockf</a>.</p>
+<p>Code here,</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line"> * Author: Ply_py</span><br><span class="line"> * OSLAB: pipe</span><br><span class="line"> */</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;unistd.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;signal.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdio.h&gt;</span></span><br><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdlib.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="preprocessor">#<span class="keyword">define</span> BUF_SIZE 105</span></span><br><span class="line"><span class="keyword">pid_t</span> pid1,pid2;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span></span><br><span class="line"><span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> fd[<span class="number">2</span>];</span><br><span class="line">    <span class="comment">// fd[0] dest, fd[1] source</span></span><br><span class="line">    <span class="keyword">char</span> in_buf[BUF_SIZE];</span><br><span class="line">    <span class="keyword">char</span> out_buf[BUF_SIZE];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (-<span class="number">1</span> == pipe(fd)) &#123;</span><br><span class="line">        perror(<span class="string">"pipe"</span>);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (-<span class="number">1</span> == (pid1 = fork())) <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="number">0</span> == pid1) &#123;<span class="comment">//child1</span></span><br><span class="line">        lockf(fd[<span class="number">1</span>], F_LOCK, <span class="number">0</span>);</span><br><span class="line">        <span class="built_in">sprintf</span>(out_buf, <span class="string">"\nChild process 1 is sending a message\n"</span>);</span><br><span class="line">        write(fd[<span class="number">1</span>], out_buf, BUF_SIZE);</span><br><span class="line">        lockf(fd[<span class="number">1</span>], F_ULOCK, <span class="number">0</span>);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_SUCCESS);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">while</span> (-<span class="number">1</span> == (pid2 = fork())) <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (<span class="number">0</span> == pid2) &#123;<span class="comment">// child2</span></span><br><span class="line">            lockf(fd[<span class="number">1</span>], F_LOCK, <span class="number">0</span>);</span><br><span class="line">            <span class="built_in">sprintf</span>(out_buf, <span class="string">"\nChild process 2 is sending a message\n"</span>);</span><br><span class="line">            write(fd[<span class="number">1</span>], out_buf, BUF_SIZE);</span><br><span class="line">            lockf(fd[<span class="number">1</span>], F_ULOCK, <span class="number">0</span>);</span><br><span class="line">            <span class="built_in">exit</span>(EXIT_SUCCESS);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123; <span class="comment">// parent</span></span><br><span class="line">            read(fd[<span class="number">0</span>], in_buf, BUF_SIZE);</span><br><span class="line">            <span class="built_in">puts</span>(in_buf);</span><br><span class="line">            wait(pid1);</span><br><span class="line">            read(fd[<span class="number">0</span>], in_buf, BUF_SIZE);</span><br><span class="line">            <span class="built_in">puts</span>(in_buf);</span><br><span class="line">            wait(pid2);</span><br><span class="line">            <span class="built_in">exit</span>(EXIT_SUCCESS);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-11-11T15:40:43.000Z"><a href="/2014/11/11/AILAB-8-puzzle/">Nov 11 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/11/11/AILAB-8-puzzle/">AILAB 8 puzzle</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>For the sake of GUI requested by stupid AI teacher, and inspired by Winner Xia. I’ve built a simple 8 Puzzle game revised from <a href="https://github.com/gabrielecirulli/2048" target="_blank" rel="external">2048</a>.</p>
+<p>Being a Muggle of front-end world, I’ve just made some slight changes.</p>
+<p><a href="/8puzzle/">Play it here</a></p>
+<p><strong>To Be Updated</strong>
+It’s late…</p>
+<p><strong>Update</strong>
+After some thoughts about what to write… I found that there is little to update… Anyway, this is the front-end that displays my A* algorithm, and since github pages could only server static webpages, I havn’t added my back-end part. If you’d like to play it, go <a href="https://github.com/Plypy/8puzzle/tree/node-server" target="_blank" rel="external">here</a>;</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-11-08T03:14:33.000Z"><a href="/2014/11/08/VHDL-notes-type-subtype-and-generate/">Nov 8 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/11/08/VHDL-notes-type-subtype-and-generate/">VHDL notes type subtype and generate</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Last week’s Lab of Computer Organization Theory, we are asked to implement something that is constituted of several components, so called a hierarchical design, or rather, top down design.</p>
+<p>Anyway, what we have to do is to code serveral basic blocks, and then connect them to form a high-level design.</p>
+<h2 id="type_and_subtype">type and subtype</h2><p>While coding, I found that, I was constantly repeating to write something like,</p>
+<pre><code>a0: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+a1: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+a2: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+a3: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+</code></pre><p>which is quiet ugly indeed. I was just repeating myself.</p>
+<p>I want to spare my life, so I wonder if there is a 2-dimensional array of <code>std_logic</code>, then I can return to the happay days that I have in C, <code>std_logic a[4][15]</code>.</p>
+<p>There is quiet a lot resources online, so without many pain, I found myself the <code>User defined types</code>. Since what I want is an array of <code>std_logic_vector</code>, I wrote these,</p>
+<pre><code><span class="comment">-- alias for std_logic_vector(15 downto 0)</span>
+<span class="keyword">subtype</span> std_logic_16 <span class="keyword">is</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+<span class="comment">-- Array type for std_logic_vector</span>
+<span class="keyword">type</span> std_logic_ar16 <span class="keyword">is</span> <span class="keyword">array</span>(<span class="typename">natural</span> <span class="keyword">range</span> &lt;&gt;) <span class="keyword">of</span> std_logic_16;
+</code></pre><p>Now, I can write</p>
+<pre><code><span class="rule"><span class="attribute">a</span>:<span class="value"> in <span class="function">std_logic_ar16</span>(<span class="number">3</span> downto <span class="number">0</span>)</span></span>;
+</code></pre><p>The life is wonderful again! However, the VHDL is different from high-level language, the array type is different from ordinary type. If you want to declare an array, you must use array type, the same goes for nonarray type. In detail, if you want to have a single instance of <code>std_logic_vector</code>, you must write <code>a: std_logic_16</code> , instead of <code>a: std_logic_ar16</code>. </p>
+<p>That seems to be evident, however, I once thought the <code>std_vector_array(15 downto 0)</code> as the <code>int [15]</code>, so I made a stupid mistake regarding <code>std_vector_array</code> as the <code>int</code>. anyway…</p>
+<h2 id="for_generate">for generate</h2><p>While I was mapping the components, the same thing happened again. Say, I have to connect 16 and gates with 16 out ports of an unit. I need to write the <code>port map</code> thing for 16 times… </p>
+<p>The people created VHDL aren’t fools, they have <a href="http://www.ics.uci.edu/~jmoorkan/vhdlref/generate.html" target="_blank" rel="external">for generate</a>.</p>
+<p>Life is once again wonderful.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-11-03T11:47:22.000Z"><a href="/2014/11/03/OSLAB-Adding-a-system-call-to-Linux-kernel/">Nov 3 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/11/03/OSLAB-Adding-a-system-call-to-Linux-kernel/">OSLAB Adding a system call to Linux kernel</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="操作系统实验记录—-编译Linux内核添加系统调用">操作系统实验记录—-编译Linux内核添加系统调用</h2><p>学过好多东西。。。但往往一定时间后自己都会忘掉。。。想去学就还得再重复一次之前的过程。还是把自己学习的过程记录下来吧，方便以后查阅。</p>
+<p>我渣交计算机大三的课程是相当的充实啊，海量的专业课与实验，再加上其他的一些事情，最近几天变身“真学狗”。。。</p>
+<p>这次操作系统实验是给Linux内核添加一个系统调用，然后重编内核。我的环境如下：Windows下VirtualBox 4.6+Ubuntu12.04(64bit)+Linux3.16</p>
+<h2 id="虚拟机&amp;Ubuntu">虚拟机&amp;Ubuntu</h2><p>编译Linux内核当然首先需要一个Linux的发行版了，我用的是小白福音Ubuntu。实验指导是让在虚拟机下编译内核的，但听夏赢家说可以直接在实际的系统下搞这件事情，这样最后不过只是给系统添加了一个启动时的选项而已，不会影响原来的内核。</p>
+<p>于是我欢心雀跃的跑到我Ubuntu下面开始编译。。。为了追求速度，用了多线程编译。没曾想，电脑太渣，只听风扇飞转，过一会机器就黑了。。。大概是CPU过热保护断电了吧，呃，Linux的桌面版对于个人用户来说还是有些渣啊。思考再三后我决定还是在虚拟机下搞这件事情，因为看到SO上有不少人说搞内核这个东西可能会”Messing up your production machine”</p>
+<p>正题开始，首先我们需要VirtualBox，推荐使用较新的4.x版本，有不少方便的功能，以及一个Ubuntu的映像文件，自己去下载吧。(<strong>UPDATE</strong> 蟹老板告诉我vmware可以轻松ctrl+c/v。。。，想试的同学可以去搞一下)</p>
+<p>好了后新建一个虚拟机，选择对应版本的Ubuntu，这个一定要跟自己准备安装的Ubuntu的版本对上。然后再几个选项，注意硬盘容量这里要选大一点。。。否则会不够用，我被坑了两次，大概30G就够用了。还有这里需要注意一点，Windows下VirtualBox会默认将磁盘文件存储在C盘下，这个路径想改的话可以在Settings-General里改掉。<strong>并且</strong>把内存设置得大一些，1G就够了，否则会悲剧，下面会讲到。</p>
+<p>然后我们再来配置一下这个虚拟机，我改了这几个</p>
+<ul>
+<li>General—&gt;Shared Clipboard：共享虚拟机和主机器的黏贴板</li>
+<li>System—&gt;Acceleration：硬件加速，能快一点，但似乎有些机器需要在BIOS上先启用硬件加速功能</li>
+<li>System—&gt;Processor: 这里选择和你机器一样的CPU数目，效率会高一些。</li>
+<li>Network：我使用了最为简单的NAT，不需要配置什么的</li>
+</ul>
+<p><em>下面这些部分都是关于配置VirtualBox的虚拟机与主系统进行文件拷贝的</em></p>
+<ul>
+<li>Shared Folders：虚拟机和主机间共享的文件夹，可以方便的用来传输文件。在Machine Folders里添加一个你想要向虚拟机里共享的文件夹吧，然后把auto mount，permanent勾上。</li>
+</ul>
+<p>接下来启动虚拟机，按照提示选择之前准备好的Ubuntu镜像，安装就是了。安装完毕后进入Ubuntu，还不能直接就开始干活。在上方菜单栏里找Devices—&gt;Insert Guest Additions CD image。这个是VirtualBox的一个增强插件，不安装的话无法使用共享文件夹等功能。点击后，虚拟机会加载这个镜像，然后弹出窗口，选Run就是了。关于Guest Additions具体参考官方文档 <a href="https://www.virtualbox.org/manual/ch04.html" target="_blank" rel="external">https://www.virtualbox.org/manual/ch04.html</a></p>
+<p>这是在 <code>/media</code>下面会加载我们之前共享的文档，Ctrl+Alt+T呼叫出终端，执行</p>
+<pre><code><span class="keyword">cd</span> /media
+<span class="keyword">ls</span> -<span class="keyword">l</span>
+</code></pre><p>可以看到这个目录下有一个sf_开头的文件夹这个就是我们共享的文件夹。我的是<code>sf_OSLAB</code>。但是此时如果我们访问的话是会显示<code>Permission denied</code>，因为应当注意到这个文件夹是属于<code>vboxsf</code>这个组的，我的用户名为plypy,执行</p>
+<pre><code><span class="label">sudo</span> <span class="keyword">adduser </span>plypy vboxsf
+</code></pre><p>然后注销再进入系统就可以搞定了</p>
+<h2 id="向Linux内核添加Hello_world_syscall">向Linux内核添加Hello world syscall</h2><p>呼出终端，建立一个文件夹用于此次实验</p>
+<pre><code><span class="built_in">mkdir</span> OSLAB
+</code></pre><hr>
+<p><strong>Update:</strong>本来用的是助教ftp上的3.13但是悲剧了，编译安装后没办法启动于是我就去下载了 3.16，最近网速蛮快的，我就直接在虚拟机下下载了压缩包</p>
+<pre><code>wget <span class="symbol">https:</span>/<span class="regexp">/www.kernel.org/pub</span><span class="regexp">/linux/kernel</span><span class="regexp">/v3.x/linux</span>-<span class="number">3.16</span>.tar.xz
+</code></pre><p><strong>More Update</strong>操**的，3.16也挂了。。。不过还好3.16显示了Kernel Panic的信息，”not syncing out of memory and no killable processes”关掉虚拟机，把内存增加设置到1G就解决问题了。想必之前3.13没成功也是这个问题，但是3.13当时没有显示Kernel Panic信息。我也不清楚,还是推荐大家用3.16或者其他的稳定版本吧。</p>
+<hr>
+<p>把东西都放进那个共享的文件夹后，在Linux下执行命令将东西都拷贝到之前建立的目录下吧</p>
+<pre><code><span class="keyword">cp</span> /media/sf_OSLAB<span class="comment">/* OSLAB/ -r</span>
+</code></pre><p>我将Linux的压缩包放在了里面，所以进去解压</p>
+<pre><code><span class="tag">cd</span> <span class="tag">OSLAB</span>
+<span class="tag">tar</span> <span class="tag">-xvf</span> <span class="tag">linux-3</span><span class="class">.16</span><span class="class">.tar</span><span class="class">.xz</span>
+</code></pre><p>接下来进入解压后的目录</p>
+<pre><code><span class="built_in">cd</span> linux-<span class="number">3.16</span>
+</code></pre><p><code>arch/x86/syscalls/syscall_64.tbl</code>这个文件存储的是64位所有syscall的表，进去添加一个。如果你安装的是32位的Ubuntu的话修改<code>syscall_32.tbl</code>就好。</p>
+<pre><code><span class="keyword">cd</span> <span class="keyword">arch</span>/x86/syscalls
+</code></pre><p>这张表的结构是</p>
+<pre><code><span class="tag">&lt;number&gt;</span> <span class="tag">&lt;abi&gt;</span> <span class="tag">&lt;name&gt;</span> <span class="tag">&lt;entry point&gt;</span>
+</code></pre><ul>
+<li>number， 是对应的syscall的编号。</li>
+<li>abi,文档说是The ABI, or application binary interface, to use. Either 64, x32, or common for both。</li>
+<li>name，是名字</li>
+<li>entry point是你定义的函数的名字。按照惯例应该为 sys_function_name</li>
+</ul>
+<p>我添加了一条</p>
+<pre><code><span class="number">317</span> <span class="preprocessor">common</span>  plypy_hello     sys_plypy_hello
+</code></pre><p>关于如何编辑这个文件，可以使用</p>
+<pre><code><span class="tag">vi</span> <span class="tag">syscall_64</span><span class="class">.tbl</span>
+</code></pre><p>这使用的是系统自带的vim，这是一个蛮不错的编辑器。想学习的话运行一下<code>vimtutor</code>。或者简单一点用<code>gedit</code>也可以，</p>
+<pre><code><span class="tag">gedit</span> <span class="tag">syscall_64</span><span class="class">.tbl</span>
+</code></pre><p>接下来找<code>include/linux/syscalls.h</code>，将我们的syscall声明添加进该头文件，仿照其他的声明，写</p>
+<pre><code>asmlinkage <span class="function"><span class="keyword">long</span> <span class="title">sys_plypy_hello</span><span class="params">(<span class="keyword">void</span>)</span></span>;
+</code></pre><p>因为我们将添加的是一个无参数的syscall所以声明成这样，注意在C语言下声明不带参量的函数需要使用void关键字，如</p>
+<pre><code><span class="keyword">return</span><span class="number">_</span><span class="keyword">value</span> foo(<span class="keyword">void</span>);
+</code></pre><p>另外这里的<code>asmlinkage</code>是用来告诉GCC不要将这个函数的参量存入寄存器而是栈中,详见Google。还有syscall需要返回一个long。</p>
+<p>接下来去实现自己的syscall，建立<code>kernel/plypy_hello.c</code>,如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/kernel.h&gt;</span></span><br><span class="line"><span class="function">asmlinkage <span class="keyword">long</span> <span class="title">sys_plypy_hello</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    printk(<span class="string">"Ply_py says, Hello World!\n"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里调用了printk，其是printf的兄弟函数，作用是向kernel的日志文件写信息。</p>
+<p>由于我们添加了新的源文件，为了将其链接进来。修改<code>kernel/Makefile</code>,将<code>plypy_hello.o</code>添加至obj-y的那个表中,完了是这样的。</p>
+<pre><code>obj-y     = fork<span class="class">.o</span> exec_domain<span class="class">.o</span> panic<span class="class">.o</span> \
+            cpu<span class="class">.o</span> exit<span class="class">.o</span> itimer<span class="class">.o</span> <span class="tag">time</span><span class="class">.o</span> softirq<span class="class">.o</span> resource<span class="class">.o</span> \
+            sysctl<span class="class">.o</span> sysctl_binary<span class="class">.o</span> capability<span class="class">.o</span> ptrace<span class="class">.o</span> timer<span class="class">.o</span> user<span class="class">.o</span> \
+            signal<span class="class">.o</span> sys<span class="class">.o</span> kmod<span class="class">.o</span> workqueue<span class="class">.o</span> pid<span class="class">.o</span> task_work<span class="class">.o</span> \
+            extable<span class="class">.o</span> params<span class="class">.o</span> posix-timers<span class="class">.o</span> \
+            kthread<span class="class">.o</span> sys_ni<span class="class">.o</span> posix-cpu-timers<span class="class">.o</span> \
+            hrtimer<span class="class">.o</span> nsproxy<span class="class">.o</span> \
+            notifier<span class="class">.o</span> ksysfs<span class="class">.o</span> cred<span class="class">.o</span> reboot<span class="class">.o</span> \
+            async<span class="class">.o</span> range<span class="class">.o</span> groups<span class="class">.o</span> smpboot<span class="class">.o</span> plypy_hello.o
+</code></pre><p>至此我们就可以编译内核啦。</p>
+<h2 id="内核编译">内核编译</h2><p>接下来返回所有源文件的根目录，开始编译</p>
+<p>首先把编译需要的东西下载了</p>
+<pre><code><span class="label">sudo</span> apt-<span class="preprocessor">get</span> install <span class="keyword">build-essential </span>libncurses5-dev
+</code></pre><p>配置</p>
+<pre><code><span class="built_in">make</span> menuconfig
+</code></pre><p>基本采取默认配置即可，可以在General—&gt;Local version处修改一下，方便区分自己搞的内核。(<strong>Update</strong>注意Local Version中不要使用奇怪的字符，不要有空格，因为它将来是要作为目录名的一部分的。) Save后,开始编译链接，之前开启了多个处理器的选项，所以可以使用多线程编译，-j(n)选项是使用n线程编译，差不多几个核就几线程吧。</p>
+<p><strong>MORE UPDATE</strong> 一些发行版（比如Ubuntu）会将当前使用的内核的配置文件放在<code>/boot/config-$(uname-r)</code>，可以考虑直接把那个拷贝过来用就好，即<code>cp /boot/config-$(uname-r) /YOURPATH/.config</code></p>
+<pre><code><span class="built_in">make</span> -j2
+</code></pre><p>编译是一个非常漫长的过程。。。至少对于我的渣电脑来说</p>
+<p><del>然后编译各个模块</del></p>
+<p><del>make modules -j2</del></p>
+<p><strong>Update</strong>: 经过夏赢家提点，我看了一下Makefile，在<code>make</code>的时候已经编译过了内核所以编译模块这一步是不需要的。</p>
+<p>安装模块及内核</p>
+<pre><code>sudo <span class="built_in">make</span> modules_install
+sudo <span class="built_in">make</span> install
+</code></pre><h2 id="测试">测试</h2><p>到这里就把内核安装好了，接下来重启一下，在启动的时候应该能看到Grub的启动菜单，选择之前编译好的linux3.16plypyhello就好，使用如下代码</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;sys/syscall.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="preprocessor">#<span class="keyword">define</span> SYS_PLYPY_HELLO 317</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    syscall(SYS_PLYPY_HELLO);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后编译运行</p>
+<pre><code>gcc testsyscall<span class="class">.c</span> -o tester
+./tester
+</code></pre><p>此时kernel的日志文件里应该多了一句”Ply_py says, Hello World!”,查看一下</p>
+<pre><code>dmesg
+</code></pre><p>就这样吧。</p>
+<h2 id="错误处理">错误处理</h2><p><strong>编译出错</strong>，这个错误只可能发生在之前修改的几个文件当中。我数次把kernel写成了kernal。。。</p>
+<p>修复完错误后需要重新编译，但得先清除上一次编译遗留的东西，由于我们的配置非常少所以不妨直接全部清除 <code>make distclean</code>,然后再重复编译的过程就可以了。具体可以参考帮助文档<code>make help</code></p>
+<p><strong>删除内核文件</strong>,有时会悲剧地编译通过后无法启动。。。把多余的内核放在有限的虚拟机空间里也不太好，可以去<code>/lib/modules/</code>,<code>/boot/</code>下删除掉之前生成的东西</p>
+<pre><code>sudo rm -rf <span class="keyword">*</span>plypyhello/ 
+</code></pre><p>然后更新一下Grub</p>
+<pre><code><span class="title">sudo</span> update-grub
+</code></pre><h2 id="总结">总结</h2><p>真tm吃力。。。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-08-19T15:21:42.000Z"><a href="/2014/08/19/Last-PR-for-GSoC/">Aug 19 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/08/19/Last-PR-for-GSoC/">Last PR for GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Today, I’ve submitted the last PR for GSoC <a href="https://github.com/openmrs/openmrs-contrib-id/pull/17" target="_blank" rel="external">here</a>.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-08-17T16:29:23.000Z"><a href="/2014/08/18/The-Last-Weekly-post-for-GSoC/">Aug 18 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/08/18/The-Last-Weekly-post-for-GSoC/">The Last Weekly-post for GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Wow, time flies. It’s already my final weekly blog post for GSoC 2014. So much fun I’ve had, Great journey indeed.</p>
+<p>I had uploaded my final presentation this week, <a href="https://talk.openmrs.org/t/gsoc-2014-openmrs-id-platform-improvements-final-presentation/492" target="_blank" rel="external">here</a>. And eared a few “likes”, hoho. However, except for that, I didn’t do much work this week. Well… if you listen carefully in my presentation, you may find out that I had some issue with my throat. It’s inflammation, and it got worse after the day I uploaded the post. So anyway, I took a week-off resting.</p>
+<p>Well, actually not just resting… my ubuntu was broken, again. So I took this chance upgraded all my stuff, including the tools that supports this blog.</p>
+<p>However, it’s already in “documentation period”, and my project has less stress on that. The works will be done soon hopefully.</p>
+<p>So, all in all, I had a sick week :/ , but the work will be done pretty.</p>
+<p>Bon voyage!</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-08-10T15:37:44.000Z"><a href="/2014/08/10/about-to-end/">Aug 10 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/08/10/about-to-end/">About to End</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Well the title should be “The 12th Week of GSoC”, if I went the usual way. Hahhhh, well, tomorrow will be the official soft pencil down date. It means, I need to stop coding, and working on perfecting documentations.</p>
+<p>It’s really been a great unforgettable experience, It’s my first time working on a real-life project, and first time to work for a open-source community, specifically such a great community that with such a noble objective. “Write codes, save lives”!</p>
+<p>Originally, I want to publish this blog later after I have done my final presentation. However it’s not done yet, and it’s close to the end of this week. I have to publish my weekly-blog.</p>
+<p>Anyway, the presentation will be done in tomorrow for sure.</p>
+<p>Well, summarize as usual.</p>
+<p>Done</p>
+<ol>
+<li>Fixed few issues, ID-48, ID-51, and working on ID-52, ID-55 now.</li>
+<li>Done the specification work for the RESTful APIs with Elliott(Well, most works is done by him, I’m not experienced…)</li>
+<li>Working on the final presentation.</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-08-02T18:56:13.000Z"><a href="/2014/08/03/the-11th-week-of-gsoc/">Aug 3 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/08/03/the-11th-week-of-gsoc/">The 11th Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Wow it’s almost close to the end of this years GSoC. So many exciting experiences, and new knowledge learnt.</p>
+<h3 id="The_OAuth">The OAuth</h3><p>Anyway, I’ve been working on the OAuth and the RESTful APIs this week. Yes, we used the OAuth 2.0 to achieve SSO service. As it is a widely-used protocol, it will be more easy for us to implement authorization logic for other OpenMRS apps.</p>
+<p>And also we plan to build a OAuth based RESTful API system. So we can open the access to the OpenMRS ID, however, we have very very very little information to share. But maybe in the future the Dashboard will have more information, and become a central data storage system. Apps can store the user related information in Dashboard, and let others to access. </p>
+<p>Well, that’s only my own vision about the far future.</p>
+<p>So, summarize briefly as usual!</p>
+<h3 id="What_I_Have_Done">What I Have Done</h3><ol>
+<li>Perfected the patch for ID-48, and learnt something new about the Mongoose.</li>
+<li>Learnt the OAuth 2.0 a bit, and began to refactor the OAuth module with Mongoose.</li>
+<li>Built the very prototype of the REST module.</li>
+</ol>
+<h3 id="ToDO">ToDO</h3><ol>
+<li>Complete the refactoring work of OAuth.</li>
+<li>Record my final presentation.</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-07-26T02:00:20.000Z"><a href="/2014/07/26/the-10th-week-of-gsoc/">Jul 26 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/07/26/the-10th-week-of-gsoc/">The 10th Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3 id="Announcement_for_Dashboard_2-0">Announcement for Dashboard 2.0</h3><p>Exciting week!!!</p>
+<p>After lots of testing and fixing, I’m proudly annoucing that the new Dashboard has been released. Check it out <a href="https://id.openmrs.org" target="_blank" rel="external">https://id.openmrs.org</a></p>
+<p>Well, the new Newdashboard hasn’t changed so much on the outside, so you may find no much differences. Except for the email selecting part of profile page. Most the chagnges have happened in the backend. We’ve replaced the data storage to Mongo, for more possibility in the future.</p>
+<p>However, I can’t say this upgrading is smooth. We’ve used lots of time on adapting to legacy datas. The new data model is somehow relatively easy to design and implement. But I have to change a lot for backward compatibility, and this process had spent lots of our time, about weeks.</p>
+<p>Anyway, briefly summarize.</p>
+<h3 id="Done">Done</h3><ol>
+<li>Collaborate with Elliott to deploy the 2.0.</li>
+<li>Fix some bugs of it.</li>
+<li>Checked and discussed the RESTful APIs with Elliott.</li>
+</ol>
+<h3 id="ToDo">ToDo</h3><ol>
+<li>RESTful APIs</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-07-20T05:53:10.000Z"><a href="/2014/07/20/the-9th-week-of-gsoc/">Jul 20 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/07/20/the-9th-week-of-gsoc/">The 9th Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3 id="Deployment">Deployment</h3><p>Oh, another week of delay… Deployment is somehow exciting and painful.</p>
+<p>In this week Elliott and I have tried to do a trial deployment on the staging server. However, we encountered lots of problems that delayed our schedule. Like duplicate emails we found earlier, and also updating other functional modules to adapt the new Dashboard.</p>
+<p>I updated the <a href="https://github.com/Plypy/OpenMRS-ID-Migrator" target="_blank" rel="external">Migrator</a>, and added a verifier for verifing the correctness of the migration, then made PRs for globalnavbar and sso module. And left oauth and groups module for Elliott to work on, sorry for that, but I really don’t know how to test these two…</p>
+<p>And after we tested the migrator separately on our own machine. Things should be fine now, we think… However, you know, another issue poped out. Last time, due to the famous heartbleed bug of OpenSSL, our people made a global password reset for all acount. Specifically, setting all accounts password as empty, as OpenLDAP won’t authenticate a user with empty password. And that is definitely a thing that I have never thought about :/</p>
+<p>Not only this, when I was checking this issue, I found that I used wrong password hashing algo, SHA rather than SSHA. And this is because of the different <code>slapd.conf</code> between production server and dev machine.</p>
+<p>So we created <a href="https://issues.openmrs.org/browse/ID-45" target="_blank" rel="external">ID-45</a> and <a href="https://issues.openmrs.org/browse/ID-46" target="_blank" rel="external">ID-46</a>.</p>
+<p>Anyhow, <strong>Summarize</strong>!!</p>
+<h3 id="What_I_Have_Done">What I Have Done</h3><ol>
+<li>Updated Migrator.</li>
+<li>Collaborated with Elliott to do a trial deployment of Dashboard 2.0 and solved lots of problems.</li>
+</ol>
+<h3 id="What_I_Will_Do">What I Will Do</h3><ol>
+<li>Finish the deployment.</li>
+<li>Learn RESTful APIs</li>
+</ol>
+<p>That’s it!</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+
+  <nav id="pagination">
+  
+  
+    <a href="/archives/2014/page/2/" class="alignright next">下一頁</a>
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜尋">
+    <input type="hidden" name="q" value="site:pages.plypy.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分類</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Fun/">Fun</a><small>1</small></li>
+  
+    <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
+  
+    <li><a href="/categories/algorithm/">algorithm</a><small>1</small></li>
+  
+    <li><a href="/categories/life/">life</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">標籤</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/CF/">CF</a><small>1</small></li>
+  
+    <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>2</small></li>
+  
+    <li><a href="/tags/Mongoose/">Mongoose</a><small>1</small></li>
+  
+    <li><a href="/tags/Node-js/">Node.js</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenLDAP/">OpenLDAP</a><small>1</small></li>
+  
+    <li><a href="/tags/Shithole/">Shithole</a><small>1</small></li>
+  
+    <li><a href="/tags/Test/">Test</a><small>1</small></li>
+  
+    <li><a href="/tags/VHDL/">VHDL</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+  
+    <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
+  
+    <li><a href="/tags/auth/">auth</a><small>1</small></li>
+  
+    <li><a href="/tags/editorial/">editorial</a><small>1</small></li>
+  
+    <li><a href="/tags/emacs/">emacs</a><small>1</small></li>
+  
+    <li><a href="/tags/exports/">exports</a><small>1</small></li>
+  
+    <li><a href="/tags/fork/">fork</a><small>1</small></li>
+  
+    <li><a href="/tags/games/">games</a><small>1</small></li>
+  
+    <li><a href="/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="/tags/linux/">linux</a><small>1</small></li>
+  
+    <li><a href="/tags/network/">network</a><small>1</small></li>
+  
+    <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
+  
+    <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
+  
+    <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Weihua Cheung
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plypy';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

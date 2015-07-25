@@ -1,0 +1,321 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Shithole | Pages of Ply_py</title>
+  <meta name="author" content="Weihua Cheung">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Pages of Ply_py"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Pages of Ply_py" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Pages of Ply_py</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+<h2 class="archive-title tag">Shithole</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-11-03T11:47:22.000Z"><a href="/2014/11/03/OSLAB-Adding-a-system-call-to-Linux-kernel/">Nov 3 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/11/03/OSLAB-Adding-a-system-call-to-Linux-kernel/">OSLAB Adding a system call to Linux kernel</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="操作系统实验记录—-编译Linux内核添加系统调用">操作系统实验记录—-编译Linux内核添加系统调用</h2><p>学过好多东西。。。但往往一定时间后自己都会忘掉。。。想去学就还得再重复一次之前的过程。还是把自己学习的过程记录下来吧，方便以后查阅。</p>
+<p>我渣交计算机大三的课程是相当的充实啊，海量的专业课与实验，再加上其他的一些事情，最近几天变身“真学狗”。。。</p>
+<p>这次操作系统实验是给Linux内核添加一个系统调用，然后重编内核。我的环境如下：Windows下VirtualBox 4.6+Ubuntu12.04(64bit)+Linux3.16</p>
+<h2 id="虚拟机&amp;Ubuntu">虚拟机&amp;Ubuntu</h2><p>编译Linux内核当然首先需要一个Linux的发行版了，我用的是小白福音Ubuntu。实验指导是让在虚拟机下编译内核的，但听夏赢家说可以直接在实际的系统下搞这件事情，这样最后不过只是给系统添加了一个启动时的选项而已，不会影响原来的内核。</p>
+<p>于是我欢心雀跃的跑到我Ubuntu下面开始编译。。。为了追求速度，用了多线程编译。没曾想，电脑太渣，只听风扇飞转，过一会机器就黑了。。。大概是CPU过热保护断电了吧，呃，Linux的桌面版对于个人用户来说还是有些渣啊。思考再三后我决定还是在虚拟机下搞这件事情，因为看到SO上有不少人说搞内核这个东西可能会”Messing up your production machine”</p>
+<p>正题开始，首先我们需要VirtualBox，推荐使用较新的4.x版本，有不少方便的功能，以及一个Ubuntu的映像文件，自己去下载吧。(<strong>UPDATE</strong> 蟹老板告诉我vmware可以轻松ctrl+c/v。。。，想试的同学可以去搞一下)</p>
+<p>好了后新建一个虚拟机，选择对应版本的Ubuntu，这个一定要跟自己准备安装的Ubuntu的版本对上。然后再几个选项，注意硬盘容量这里要选大一点。。。否则会不够用，我被坑了两次，大概30G就够用了。还有这里需要注意一点，Windows下VirtualBox会默认将磁盘文件存储在C盘下，这个路径想改的话可以在Settings-General里改掉。<strong>并且</strong>把内存设置得大一些，1G就够了，否则会悲剧，下面会讲到。</p>
+<p>然后我们再来配置一下这个虚拟机，我改了这几个</p>
+<ul>
+<li>General—&gt;Shared Clipboard：共享虚拟机和主机器的黏贴板</li>
+<li>System—&gt;Acceleration：硬件加速，能快一点，但似乎有些机器需要在BIOS上先启用硬件加速功能</li>
+<li>System—&gt;Processor: 这里选择和你机器一样的CPU数目，效率会高一些。</li>
+<li>Network：我使用了最为简单的NAT，不需要配置什么的</li>
+</ul>
+<p><em>下面这些部分都是关于配置VirtualBox的虚拟机与主系统进行文件拷贝的</em></p>
+<ul>
+<li>Shared Folders：虚拟机和主机间共享的文件夹，可以方便的用来传输文件。在Machine Folders里添加一个你想要向虚拟机里共享的文件夹吧，然后把auto mount，permanent勾上。</li>
+</ul>
+<p>接下来启动虚拟机，按照提示选择之前准备好的Ubuntu镜像，安装就是了。安装完毕后进入Ubuntu，还不能直接就开始干活。在上方菜单栏里找Devices—&gt;Insert Guest Additions CD image。这个是VirtualBox的一个增强插件，不安装的话无法使用共享文件夹等功能。点击后，虚拟机会加载这个镜像，然后弹出窗口，选Run就是了。关于Guest Additions具体参考官方文档 <a href="https://www.virtualbox.org/manual/ch04.html" target="_blank" rel="external">https://www.virtualbox.org/manual/ch04.html</a></p>
+<p>这是在 <code>/media</code>下面会加载我们之前共享的文档，Ctrl+Alt+T呼叫出终端，执行</p>
+<pre><code><span class="keyword">cd</span> /media
+<span class="keyword">ls</span> -<span class="keyword">l</span>
+</code></pre><p>可以看到这个目录下有一个sf_开头的文件夹这个就是我们共享的文件夹。我的是<code>sf_OSLAB</code>。但是此时如果我们访问的话是会显示<code>Permission denied</code>，因为应当注意到这个文件夹是属于<code>vboxsf</code>这个组的，我的用户名为plypy,执行</p>
+<pre><code><span class="label">sudo</span> <span class="keyword">adduser </span>plypy vboxsf
+</code></pre><p>然后注销再进入系统就可以搞定了</p>
+<h2 id="向Linux内核添加Hello_world_syscall">向Linux内核添加Hello world syscall</h2><p>呼出终端，建立一个文件夹用于此次实验</p>
+<pre><code><span class="built_in">mkdir</span> OSLAB
+</code></pre><hr>
+<p><strong>Update:</strong>本来用的是助教ftp上的3.13但是悲剧了，编译安装后没办法启动于是我就去下载了 3.16，最近网速蛮快的，我就直接在虚拟机下下载了压缩包</p>
+<pre><code>wget <span class="symbol">https:</span>/<span class="regexp">/www.kernel.org/pub</span><span class="regexp">/linux/kernel</span><span class="regexp">/v3.x/linux</span>-<span class="number">3.16</span>.tar.xz
+</code></pre><p><strong>More Update</strong>操**的，3.16也挂了。。。不过还好3.16显示了Kernel Panic的信息，”not syncing out of memory and no killable processes”关掉虚拟机，把内存增加设置到1G就解决问题了。想必之前3.13没成功也是这个问题，但是3.13当时没有显示Kernel Panic信息。我也不清楚,还是推荐大家用3.16或者其他的稳定版本吧。</p>
+<hr>
+<p>把东西都放进那个共享的文件夹后，在Linux下执行命令将东西都拷贝到之前建立的目录下吧</p>
+<pre><code><span class="keyword">cp</span> /media/sf_OSLAB<span class="comment">/* OSLAB/ -r</span>
+</code></pre><p>我将Linux的压缩包放在了里面，所以进去解压</p>
+<pre><code><span class="tag">cd</span> <span class="tag">OSLAB</span>
+<span class="tag">tar</span> <span class="tag">-xvf</span> <span class="tag">linux-3</span><span class="class">.16</span><span class="class">.tar</span><span class="class">.xz</span>
+</code></pre><p>接下来进入解压后的目录</p>
+<pre><code><span class="built_in">cd</span> linux-<span class="number">3.16</span>
+</code></pre><p><code>arch/x86/syscalls/syscall_64.tbl</code>这个文件存储的是64位所有syscall的表，进去添加一个。如果你安装的是32位的Ubuntu的话修改<code>syscall_32.tbl</code>就好。</p>
+<pre><code><span class="keyword">cd</span> <span class="keyword">arch</span>/x86/syscalls
+</code></pre><p>这张表的结构是</p>
+<pre><code><span class="tag">&lt;number&gt;</span> <span class="tag">&lt;abi&gt;</span> <span class="tag">&lt;name&gt;</span> <span class="tag">&lt;entry point&gt;</span>
+</code></pre><ul>
+<li>number， 是对应的syscall的编号。</li>
+<li>abi,文档说是The ABI, or application binary interface, to use. Either 64, x32, or common for both。</li>
+<li>name，是名字</li>
+<li>entry point是你定义的函数的名字。按照惯例应该为 sys_function_name</li>
+</ul>
+<p>我添加了一条</p>
+<pre><code><span class="number">317</span> <span class="preprocessor">common</span>  plypy_hello     sys_plypy_hello
+</code></pre><p>关于如何编辑这个文件，可以使用</p>
+<pre><code><span class="tag">vi</span> <span class="tag">syscall_64</span><span class="class">.tbl</span>
+</code></pre><p>这使用的是系统自带的vim，这是一个蛮不错的编辑器。想学习的话运行一下<code>vimtutor</code>。或者简单一点用<code>gedit</code>也可以，</p>
+<pre><code><span class="tag">gedit</span> <span class="tag">syscall_64</span><span class="class">.tbl</span>
+</code></pre><p>接下来找<code>include/linux/syscalls.h</code>，将我们的syscall声明添加进该头文件，仿照其他的声明，写</p>
+<pre><code>asmlinkage <span class="function"><span class="keyword">long</span> <span class="title">sys_plypy_hello</span><span class="params">(<span class="keyword">void</span>)</span></span>;
+</code></pre><p>因为我们将添加的是一个无参数的syscall所以声明成这样，注意在C语言下声明不带参量的函数需要使用void关键字，如</p>
+<pre><code><span class="keyword">return</span><span class="number">_</span><span class="keyword">value</span> foo(<span class="keyword">void</span>);
+</code></pre><p>另外这里的<code>asmlinkage</code>是用来告诉GCC不要将这个函数的参量存入寄存器而是栈中,详见Google。还有syscall需要返回一个long。</p>
+<p>接下来去实现自己的syscall，建立<code>kernel/plypy_hello.c</code>,如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;linux/kernel.h&gt;</span></span><br><span class="line"><span class="function">asmlinkage <span class="keyword">long</span> <span class="title">sys_plypy_hello</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    printk(<span class="string">"Ply_py says, Hello World!\n"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里调用了printk，其是printf的兄弟函数，作用是向kernel的日志文件写信息。</p>
+<p>由于我们添加了新的源文件，为了将其链接进来。修改<code>kernel/Makefile</code>,将<code>plypy_hello.o</code>添加至obj-y的那个表中,完了是这样的。</p>
+<pre><code>obj-y     = fork<span class="class">.o</span> exec_domain<span class="class">.o</span> panic<span class="class">.o</span> \
+            cpu<span class="class">.o</span> exit<span class="class">.o</span> itimer<span class="class">.o</span> <span class="tag">time</span><span class="class">.o</span> softirq<span class="class">.o</span> resource<span class="class">.o</span> \
+            sysctl<span class="class">.o</span> sysctl_binary<span class="class">.o</span> capability<span class="class">.o</span> ptrace<span class="class">.o</span> timer<span class="class">.o</span> user<span class="class">.o</span> \
+            signal<span class="class">.o</span> sys<span class="class">.o</span> kmod<span class="class">.o</span> workqueue<span class="class">.o</span> pid<span class="class">.o</span> task_work<span class="class">.o</span> \
+            extable<span class="class">.o</span> params<span class="class">.o</span> posix-timers<span class="class">.o</span> \
+            kthread<span class="class">.o</span> sys_ni<span class="class">.o</span> posix-cpu-timers<span class="class">.o</span> \
+            hrtimer<span class="class">.o</span> nsproxy<span class="class">.o</span> \
+            notifier<span class="class">.o</span> ksysfs<span class="class">.o</span> cred<span class="class">.o</span> reboot<span class="class">.o</span> \
+            async<span class="class">.o</span> range<span class="class">.o</span> groups<span class="class">.o</span> smpboot<span class="class">.o</span> plypy_hello.o
+</code></pre><p>至此我们就可以编译内核啦。</p>
+<h2 id="内核编译">内核编译</h2><p>接下来返回所有源文件的根目录，开始编译</p>
+<p>首先把编译需要的东西下载了</p>
+<pre><code><span class="label">sudo</span> apt-<span class="preprocessor">get</span> install <span class="keyword">build-essential </span>libncurses5-dev
+</code></pre><p>配置</p>
+<pre><code><span class="built_in">make</span> menuconfig
+</code></pre><p>基本采取默认配置即可，可以在General—&gt;Local version处修改一下，方便区分自己搞的内核。(<strong>Update</strong>注意Local Version中不要使用奇怪的字符，不要有空格，因为它将来是要作为目录名的一部分的。) Save后,开始编译链接，之前开启了多个处理器的选项，所以可以使用多线程编译，-j(n)选项是使用n线程编译，差不多几个核就几线程吧。</p>
+<p><strong>MORE UPDATE</strong> 一些发行版（比如Ubuntu）会将当前使用的内核的配置文件放在<code>/boot/config-$(uname-r)</code>，可以考虑直接把那个拷贝过来用就好，即<code>cp /boot/config-$(uname-r) /YOURPATH/.config</code></p>
+<pre><code><span class="built_in">make</span> -j2
+</code></pre><p>编译是一个非常漫长的过程。。。至少对于我的渣电脑来说</p>
+<p><del>然后编译各个模块</del></p>
+<p><del>make modules -j2</del></p>
+<p><strong>Update</strong>: 经过夏赢家提点，我看了一下Makefile，在<code>make</code>的时候已经编译过了内核所以编译模块这一步是不需要的。</p>
+<p>安装模块及内核</p>
+<pre><code>sudo <span class="built_in">make</span> modules_install
+sudo <span class="built_in">make</span> install
+</code></pre><h2 id="测试">测试</h2><p>到这里就把内核安装好了，接下来重启一下，在启动的时候应该能看到Grub的启动菜单，选择之前编译好的linux3.16plypyhello就好，使用如下代码</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;sys/syscall.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="preprocessor">#<span class="keyword">define</span> SYS_PLYPY_HELLO 317</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    syscall(SYS_PLYPY_HELLO);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后编译运行</p>
+<pre><code>gcc testsyscall<span class="class">.c</span> -o tester
+./tester
+</code></pre><p>此时kernel的日志文件里应该多了一句”Ply_py says, Hello World!”,查看一下</p>
+<pre><code>dmesg
+</code></pre><p>就这样吧。</p>
+<h2 id="错误处理">错误处理</h2><p><strong>编译出错</strong>，这个错误只可能发生在之前修改的几个文件当中。我数次把kernel写成了kernal。。。</p>
+<p>修复完错误后需要重新编译，但得先清除上一次编译遗留的东西，由于我们的配置非常少所以不妨直接全部清除 <code>make distclean</code>,然后再重复编译的过程就可以了。具体可以参考帮助文档<code>make help</code></p>
+<p><strong>删除内核文件</strong>,有时会悲剧地编译通过后无法启动。。。把多余的内核放在有限的虚拟机空间里也不太好，可以去<code>/lib/modules/</code>,<code>/boot/</code>下删除掉之前生成的东西</p>
+<pre><code>sudo rm -rf <span class="keyword">*</span>plypyhello/ 
+</code></pre><p>然后更新一下Grub</p>
+<pre><code><span class="title">sudo</span> update-grub
+</code></pre><h2 id="总结">总结</h2><p>真tm吃力。。。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜尋">
+    <input type="hidden" name="q" value="site:pages.plypy.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分類</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Fun/">Fun</a><small>1</small></li>
+  
+    <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
+  
+    <li><a href="/categories/algorithm/">algorithm</a><small>1</small></li>
+  
+    <li><a href="/categories/life/">life</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">標籤</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/CF/">CF</a><small>1</small></li>
+  
+    <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>2</small></li>
+  
+    <li><a href="/tags/Mongoose/">Mongoose</a><small>1</small></li>
+  
+    <li><a href="/tags/Node-js/">Node.js</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenLDAP/">OpenLDAP</a><small>1</small></li>
+  
+    <li><a href="/tags/Shithole/">Shithole</a><small>1</small></li>
+  
+    <li><a href="/tags/Test/">Test</a><small>1</small></li>
+  
+    <li><a href="/tags/VHDL/">VHDL</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+  
+    <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
+  
+    <li><a href="/tags/auth/">auth</a><small>1</small></li>
+  
+    <li><a href="/tags/editorial/">editorial</a><small>1</small></li>
+  
+    <li><a href="/tags/emacs/">emacs</a><small>1</small></li>
+  
+    <li><a href="/tags/exports/">exports</a><small>1</small></li>
+  
+    <li><a href="/tags/fork/">fork</a><small>1</small></li>
+  
+    <li><a href="/tags/games/">games</a><small>1</small></li>
+  
+    <li><a href="/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="/tags/linux/">linux</a><small>1</small></li>
+  
+    <li><a href="/tags/network/">network</a><small>1</small></li>
+  
+    <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
+  
+    <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
+  
+    <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Weihua Cheung
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plypy';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

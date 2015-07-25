@@ -1,0 +1,582 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>GSoC2015 | Pages of Ply_py</title>
+  <meta name="author" content="Weihua Cheung">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Pages of Ply_py"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Pages of Ply_py" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Pages of Ply_py</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+<h2 class="archive-title category">GSoC2015</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-07-25T15:08:14.000Z"><a href="/2015/07/25/GSoC-2015-Week9/">Jul 25 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/07/25/GSoC-2015-Week9/">GSoC 2015 Week9</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>The restructuring work continues, this weeks I’ve mainly done some ending works of this, including:</p>
+<ul>
+<li><p>Refactoring modules related with <code>email-verification</code>. Email templates now share a common layout, <code>actionId</code> and <code>verifyId</code> are replaced by a single <code>uuid</code>, few variable names are updated and some packages as well.</p>
+</li>
+<li><p>Reorganizing admin page related things, rearrage the middlewares so other user-modules won’t bother privilege problems which makes things neat.</p>
+</li>
+<li>Updated modules to coform to new Dashboard.</li>
+<li>More…</li>
+</ul>
+<p>While I was doing the EJS 2 JADE works, I once again encountered a problem. Elliott had written this code below,
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#60;script type=&#34;text/javascript&#34;&#62;&#10;$(function() &#123;&#10;    var paramRow = function()&#123;&#10;        return &#39;&#60;tr&#62;&#60;% for (var j = 0; j &#60; columns.length; j++) &#123; %&#62;&#60;td&#62;&#39;&#10;            +&#39;&#60;input type=&#34;text&#34; class=&#34;&#60;%=columns[j].type%&#62;&#34; placeholder=&#34;&#60;%=columns[j].value%&#62;&#34; name=&#34;&#39;+($(&#39;#params tbody tr&#39;).length-1)+&#39;-&#60;%=columns[j].name%&#62;&#34;&#62;&#60;/td&#62;&#60;% &#125; %&#62;&#60;/tr&#62;&#39;;&#10;        &#125;;      &#10;/// more&#10;&#125;;&#10;&#60;/script&#62;</span><br></pre></td></tr></table></figure></p>
+<p>Basically it utilizes some code to generate the Javascript code that will be used in our pages, this section of Javascript would be a plain text block in JADE syntax. However, I can’t figure out how to iterate within a plain text block, which seems not to be a good idea. </p>
+<p>Having tried lots of ways and considered the concept of static compiling, my solution are,
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-&#10;  //- if only I could use jade.render in templates&#10;  var rowAdded = &#39;&#60;tr&#62;&#39;;&#10;  for (var j = 0; j &#60; settings.columns.length; ++j) &#123;&#10;    var col = settings.columns[j];&#10;    rowAdded += &#39;&#60;td&#62;&#39;;&#10;    rowAdded += &#39;&#60;input type=&#34;text&#34; class=&#34;&#39;+ col.type + &#39;&#34; &#39; +&#10;      &#39;placeholder=&#34;&#39; + col.value + &#39;&#34; &#39; +&#10;      &#39;name=&#34;&#123;&#123;index&#125;&#125;-&#39; + col.name + &#39;&#34;&#62;&#39;;&#10;    rowAdded += &#39;&#60;/td&#62;&#39;;&#10;  &#125;&#10;  rowAdded += &#39;&#60;/tr&#62;&#39;;&#10;//- script start&#10;script(type=&#39;text/javascript&#39;).&#10;  $(function() &#123;&#10;    var paramRow = function()&#123;&#10;      var index = $(&#39;#params tr&#39;).length-1;&#10;      //- unescaped&#10;      return  &#39;!&#123;rowAdded&#125;&#39;.replace(/&#123;&#123;index&#125;&#125;/g, index);&#10;    &#125;;&#10;  &#125;;&#10;  /// more</span><br></pre></td></tr></table></figure></p>
+<p>This is quiet ugly… but it’s the best solution I could get.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-07-19T03:00:46.000Z"><a href="/2015/07/19/GSoC-2015-Week8/">Jul 19 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/07/19/GSoC-2015-Week8/">GSoC 2015 Week8</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>It’s a taxing week indeed, I’ve done lots of works, including:</p>
+<h3 id="EJS_to_JADE">EJS to JADE</h3><p>The EJS template engine is somehow outdated and lots of functions we’re utilizing in Dashboard currently is abandoned, like layouts and partials. Besides Dashboard hasn’t done well in segregation between views level and controller level, lots of html stuff are injected programatically, which makes things hard to maintain. So we’ve decided to convert EJS to JADE, and update other related stuff as well.</p>
+<p>Things like this are usually boring and taxing, however, we must accept the fact and conquer it.</p>
+<h3 id="Restructing_the_Project">Restructing the Project</h3><p>We used a system modules structure last year, trying to separate the routes logic to make things clearer. But rethinking it again, now I find the idea is very stupid, it hasn’t make things more clearer, but make the code more cumbersome. So I’ve taken this chance to remedy the errors I commited. The structure now mainly borrows Keysone’s, though we haven’t adopted its DB solution.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-07-12T17:06:42.000Z"><a href="/2015/07/13/GSoC-2015-Week7/">Jul 13 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/07/13/GSoC-2015-Week7/">GSoC 2015 Week7</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Although the plans were usually fancy, reality is not sometimes. We were planning to embrace the Keystone.js in this year’s GSoC. It is me that proposed this as I’ve found out that Keystone.js is very easy for a quick development of Node.js centered project and made a small experiment in this<a href="https://github.com/Plypy/fairy" target="_blank" rel="external">repo</a>, and later found out that Keystone.js isn’t that fantastic as it first looks like. Like many open source project, it’s still in a very early stage and not suited for certain scenerios. </p>
+<p>In my experiments, I doubted once that the Keysone.js maybe have done too much on the Data level, where Keystone.js tried to wrap Mongoose to extend its functionlity, like providing pre-defined tags types and other things up on the top level of development, but hasn’t provided good documents. That time I thought that it’s not a big deal, just some small faults. But later in the development of Dashboard, through few days massing up I find that it’s even hard to define a Array of String, which hasn’t presented until very recent. </p>
+<p>The wrap it has done for Mongoose, in my opion, instead of extending it, but limited its flexibility. I really think that it has violated a principle, tools should be used as it should be. Mongoose is designed for flexible and stable data modeling, and focusing on it solely. But for now, if I want to use a custom data type in my model, I have to hope that Keystone has already provided it or patch this kind of type myown. It’s obviously not a good idea, IMHO, a good extension should work along with original tools not covering it.</p>
+<p>Anyways, we’ve abandoned Keystone’s DB solution officially. However, its folder structure is still worthy of referring.</p>
+<p>Above was all the big talk of the project. For works in detail: I’ve been working on updating the project entirely, and now on EJS to Jade with other view level transformation.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-07-05T00:49:08.000Z"><a href="/2015/07/05/GSoC-2015-Week6/">Jul 5 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/07/05/GSoC-2015-Week6/">GSoC 2015 Week6</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>… From the GSoC timeline showed on melange, I thought this week is used for resting… So shamefully, I haven’t done many things this week…</p>
+<p>The project is now appraching a important stage to improve embrace the <code>Keystone</code>. Though issue on JIRA said that it was used to simply replace <code>Formage</code>, there are lots of works besides this. It’s not simply a new admin panel, but a new project structure. The current one haven’t tackled the segragation well, many modules are strongly cohesive and the logic flow between sources is like a mess. Last year I’ve been focusing on minor-scale stuff, and this year on big pictures, just to make the Dashboard more maintainable and more easy to comprehend for future developers.</p>
+<p>Currently I was trying to add keystone the panel to Dashboard, however small problems were encountered. Here is a <a href="https://github.com/keystonejs/keystone/issues/1508" target="_blank" rel="external">issue</a> I opened.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-06-27T02:35:04.000Z"><a href="/2015/06/27/GSoC-2015-Week5/">Jun 27 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/06/27/GSoC-2015-Week5/">GSoC 2015 Week5</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>It’s about the midterm evaluation. Things have been proceeding fine thus far. Like last year I’ve made a report and published <a href="https://talk.openmrs.org/t/gsoc-2015-openmrs-id-v2-1-platform-improvements-midterm-presentation/2261/7" target="_blank" rel="external">here</a>. It’s been kind of taxing to record it as my English isn’t very good and I haven’t fully recovered from pharyngitis. And sadly few days later, it got severer again… :/</p>
+<p>Besides the report, I’ve also mainly delivered:</p>
+<ul>
+<li>bug fixes for ID-89</li>
+<li>more work about ID-88</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-06-20T14:44:14.000Z"><a href="/2015/06/20/GSoC-2015-Week4/">Jun 20 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/06/20/GSoC-2015-Week4/">GSoC 2015 Week4</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>The biggest news for this week is that I’ve had my last final of this semster finished.</p>
+<p>Well… Not many works I’ve done due to dealing with those finals. However, as the good news suggests, I’ll have more time from now on to work on. Things will be better. The tough issue <a href="https://issues.openmrs.org/browse/ID-103" target="_blank" rel="external">ID-103</a> is still ahead of me.</p>
+<h3 id="Done">Done</h3><ul>
+<li><p>After lots of discussion… I’ve fixed this <a href="https://talk.openmrs.org/t/lots-of-ldap-errors-with-email-verification-process-in-past-few-days/1951" target="_blank" rel="external">LDAP issue</a> reported by Michael. Something related with LDAP was wrong, but I don’t know where it is. However, I’m pretty sure, it shouldn’t be Dashboard’s fault form the log file.</p>
+</li>
+<li><p>Discussed other issues and future works</p>
+</li>
+</ul>
+<h2 id="ToDo">ToDo</h2><ul>
+<li>ID-88, Replace MySQL legacy stuff.</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-06-13T08:08:29.000Z"><a href="/2015/06/13/GSoC-2015-Week3/">Jun 13 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/06/13/GSoC-2015-Week3/">GSoC 2015 Week3</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Another week of exam…</p>
+<p>I’ve mainly done two things this week, finishing ID-89 and ID-102.</p>
+<p>There is not much to talk about ID-102, just deleting and replacing… For ID-89, refactoring <code>ldap.js</code>, It’s been a long time that I noticed that operations related with <code>ldap.js</code> would be much slower than the ordinary. After checking the search operations, I found that the old one will use search which has <code>baseDN</code> of <code>ou=users,dc=openmrs,dc=org</code> and a filter of <code>uid=USERNAME</code>. Then inspired by intuition, I realized that LDAP server may highly possible first fetch all entries under <code>baseDN</code> and then use that filter to select the items. This would be intolerant in production, as we can directly find the entry via <code>DN</code> of <code>uid=USERNAME,ou=users,dc=openmrs,dc=org</code>.</p>
+<p>After performing a little experimentation on my machine and proving that search with direct <code>DN</code> would be 1 times more faster than with <code>filter</code>. I rewrote all the operations in the new ldap.js. Hence, this time, the refactor doesn’t only focus on logic flow and readabilities, but also efficiency.</p>
+<h2 id="TODO_for_Next_Week">TODO for Next Week</h2><ul>
+<li>ES6 investigation</li>
+<li>Something else interesting</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-06-06T14:24:44.000Z"><a href="/2015/06/06/GSoC-2015-Week2/">Jun 6 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/06/06/GSoC-2015-Week2/">GSoC 2015 Week2</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Well… Exam period is coming… For the sake of GPA, I have to spend lots of time on reviewing. Hence, commits were getting less.</p>
+<p>However, goodnews is that the midterm goals are kind of easier compared to those final, and I’ve finished a lot. Currently I’m working on managing front-end dependencies by <a href="bower.io">Bower</a>, which is a npm-like package management tools. Though the task itself is rather easy, all I need to do is find the referrence and replace it, some parts of codebase of Dashboard are kind of aged with lots of deprecated code and dependencies that sometimes will confuse developer, namely me for now. So besides adorpting Bower, I’m also reviewing our code-base to filter out-dated parts which would make things easier in the future. That’s work related with <a href="https://issues.openmrs.org/browse/ID-102" target="_blank" rel="external">ID-102</a></p>
+<p>Also, I’ve been working on <a href="https://issues.openmrs.org/browse/ID-89" target="_blank" rel="external">ID-89</a> as well which aims to refactor <code>ldap.js</code> and add tests.</p>
+<p>To summarize:</p>
+<h2 id="Done:">Done:</h2><ul>
+<li>Reviewed some parts of Dashboard front-end thing.</li>
+<li>Refactored <code>ldap.js</code> and added some tests for it.</li>
+</ul>
+<h2 id="ToDo">ToDo</h2><ul>
+<li>Finish these tasks: ID-102 and ID-89.</li>
+<li>See what I can achieve with ES6.</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-05-30T03:24:05.000Z"><a href="/2015/05/30/GSoC-2015-Week1/">May 30 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/05/30/GSoC-2015-Week1/">GSoC 2015: Week1</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>The first week has passed with not too many troubles, and I hope that this could last for the whole summer. :)</p>
+<p>Though having pressure to deal with school works as well, I still managed to deliver some simple work. It’s <a href="https://issues.openmrs.org/browse/ID-105" target="_blank" rel="external">ID-105</a> that concerns about creating and synchronizing the OpenMRS-ID with Talk’s account system.</p>
+<p>Well, originally I thought this would be a simple task that only costs a few hours. However, it’s not that easy. From my work log, I can recall that I’ve spent one and a half day to get the testing environment set up. The Discourse has a paucity of documentation, like many start-up opensource projects, and it’s also a Ruby on Rails project, which is a technique I’m totally unfamiliar with. And after setting up the environment, I then used a day to mess around with its API, which turns out to be inappropriate. :/ So exhausted I am, I decided to use the brutal-force way, which is to imitate user’s login behaviour as SSO will handle the sync automatically.</p>
+<p>Right before I deliver my PR, Robby notified me about the newly added PR convention of OpenMRS listed <a href="http://en.flossmanuals.net/openmrs-developers-guide/development-process/" target="_blank" rel="external">here</a>. The guide suggests us to use <code>git rebase</code> to squash all commits into one and then make the PR. That’s indeed very thoughtful idea. It’s a pity that I only know this now. And then I wrote another script for syncing current accounts.</p>
+<p>Anyway to sum up briefly:</p>
+<h2 id="What_I_Have_Done">What I Have Done</h2><ul>
+<li>Added an auto-sync hook for TALK.</li>
+<li>Wrote a script to import current accouts.</li>
+</ul>
+<p>Actually…… It’s not so much that I have done. Sorry, used a few days to get familiar to development again.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2015-05-01T03:44:36.000Z"><a href="/2015/05/01/GSoC-2015-New-Start/">May 1 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/05/01/GSoC-2015-New-Start/">GSoC 2015: New Start</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Well, I’ve been luckily enough to get selected in this year’s GSoC with OpenMRS again. </p>
+<p>I’ll continue to work on the Dashboard, to make it a better and mature platform, as the works I did last year was a rookie’s first trial. Though it has been running well for quiet a long time, there are appreicably problems remained, as mentioned <a href="https://talk.openmrs.org/t/some-id-dashboard-improvement-ideas/1296" target="_blank" rel="external">here</a></p>
+<p>I hope I’ll solve those problems during this summer, and present a better ID Dashboard.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜尋">
+    <input type="hidden" name="q" value="site:pages.plypy.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分類</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Fun/">Fun</a><small>1</small></li>
+  
+    <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
+  
+    <li><a href="/categories/algorithm/">algorithm</a><small>1</small></li>
+  
+    <li><a href="/categories/life/">life</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">標籤</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/CF/">CF</a><small>1</small></li>
+  
+    <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>2</small></li>
+  
+    <li><a href="/tags/Mongoose/">Mongoose</a><small>1</small></li>
+  
+    <li><a href="/tags/Node-js/">Node.js</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenLDAP/">OpenLDAP</a><small>1</small></li>
+  
+    <li><a href="/tags/Shithole/">Shithole</a><small>1</small></li>
+  
+    <li><a href="/tags/Test/">Test</a><small>1</small></li>
+  
+    <li><a href="/tags/VHDL/">VHDL</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+  
+    <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
+  
+    <li><a href="/tags/auth/">auth</a><small>1</small></li>
+  
+    <li><a href="/tags/editorial/">editorial</a><small>1</small></li>
+  
+    <li><a href="/tags/emacs/">emacs</a><small>1</small></li>
+  
+    <li><a href="/tags/exports/">exports</a><small>1</small></li>
+  
+    <li><a href="/tags/fork/">fork</a><small>1</small></li>
+  
+    <li><a href="/tags/games/">games</a><small>1</small></li>
+  
+    <li><a href="/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="/tags/linux/">linux</a><small>1</small></li>
+  
+    <li><a href="/tags/network/">network</a><small>1</small></li>
+  
+    <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
+  
+    <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
+  
+    <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Weihua Cheung
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plypy';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>VHDL | Pages of Ply_py</title>
+  <meta name="author" content="Weihua Cheung">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Pages of Ply_py"/>
+
+  
+    <meta property="og:image" content="undefined"/>
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Pages of Ply_py" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Pages of Ply_py</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+<h2 class="archive-title tag">VHDL</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2014-11-08T03:14:33.000Z"><a href="/2014/11/08/VHDL-notes-type-subtype-and-generate/">Nov 8 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/11/08/VHDL-notes-type-subtype-and-generate/">VHDL notes type subtype and generate</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Last week’s Lab of Computer Organization Theory, we are asked to implement something that is constituted of several components, so called a hierarchical design, or rather, top down design.</p>
+<p>Anyway, what we have to do is to code serveral basic blocks, and then connect them to form a high-level design.</p>
+<h2 id="type_and_subtype">type and subtype</h2><p>While coding, I found that, I was constantly repeating to write something like,</p>
+<pre><code>a0: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+a1: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+a2: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+a3: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+</code></pre><p>which is quiet ugly indeed. I was just repeating myself.</p>
+<p>I want to spare my life, so I wonder if there is a 2-dimensional array of <code>std_logic</code>, then I can return to the happay days that I have in C, <code>std_logic a[4][15]</code>.</p>
+<p>There is quiet a lot resources online, so without many pain, I found myself the <code>User defined types</code>. Since what I want is an array of <code>std_logic_vector</code>, I wrote these,</p>
+<pre><code><span class="comment">-- alias for std_logic_vector(15 downto 0)</span>
+<span class="keyword">subtype</span> std_logic_16 <span class="keyword">is</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+<span class="comment">-- Array type for std_logic_vector</span>
+<span class="keyword">type</span> std_logic_ar16 <span class="keyword">is</span> <span class="keyword">array</span>(<span class="typename">natural</span> <span class="keyword">range</span> &lt;&gt;) <span class="keyword">of</span> std_logic_16;
+</code></pre><p>Now, I can write</p>
+<pre><code><span class="rule"><span class="attribute">a</span>:<span class="value"> in <span class="function">std_logic_ar16</span>(<span class="number">3</span> downto <span class="number">0</span>)</span></span>;
+</code></pre><p>The life is wonderful again! However, the VHDL is different from high-level language, the array type is different from ordinary type. If you want to declare an array, you must use array type, the same goes for nonarray type. In detail, if you want to have a single instance of <code>std_logic_vector</code>, you must write <code>a: std_logic_16</code> , instead of <code>a: std_logic_ar16</code>. </p>
+<p>That seems to be evident, however, I once thought the <code>std_vector_array(15 downto 0)</code> as the <code>int [15]</code>, so I made a stupid mistake regarding <code>std_vector_array</code> as the <code>int</code>. anyway…</p>
+<h2 id="for_generate">for generate</h2><p>While I was mapping the components, the same thing happened again. Say, I have to connect 16 and gates with 16 out ports of an unit. I need to write the <code>port map</code> thing for 16 times… </p>
+<p>The people created VHDL aren’t fools, they have <a href="http://www.ics.uci.edu/~jmoorkan/vhdlref/generate.html" target="_blank" rel="external">for generate</a>.</p>
+<p>Life is once again wonderful.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="搜尋">
+    <input type="hidden" name="q" value="site:pages.plypy.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">分類</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/Fun/">Fun</a><small>1</small></li>
+  
+    <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
+  
+    <li><a href="/categories/algorithm/">algorithm</a><small>1</small></li>
+  
+    <li><a href="/categories/life/">life</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">標籤</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/CF/">CF</a><small>1</small></li>
+  
+    <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
+  
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+  
+    <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
+  
+    <li><a href="/tags/MongoDB/">MongoDB</a><small>2</small></li>
+  
+    <li><a href="/tags/Mongoose/">Mongoose</a><small>1</small></li>
+  
+    <li><a href="/tags/Node-js/">Node.js</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenLDAP/">OpenLDAP</a><small>1</small></li>
+  
+    <li><a href="/tags/Shithole/">Shithole</a><small>1</small></li>
+  
+    <li><a href="/tags/Test/">Test</a><small>1</small></li>
+  
+    <li><a href="/tags/VHDL/">VHDL</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+  
+    <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
+  
+    <li><a href="/tags/auth/">auth</a><small>1</small></li>
+  
+    <li><a href="/tags/editorial/">editorial</a><small>1</small></li>
+  
+    <li><a href="/tags/emacs/">emacs</a><small>1</small></li>
+  
+    <li><a href="/tags/exports/">exports</a><small>1</small></li>
+  
+    <li><a href="/tags/fork/">fork</a><small>1</small></li>
+  
+    <li><a href="/tags/games/">games</a><small>1</small></li>
+  
+    <li><a href="/tags/javascript/">javascript</a><small>1</small></li>
+  
+    <li><a href="/tags/linux/">linux</a><small>1</small></li>
+  
+    <li><a href="/tags/network/">network</a><small>1</small></li>
+  
+    <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
+  
+    <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
+  
+    <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2015 Weihua Cheung
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plypy';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>
