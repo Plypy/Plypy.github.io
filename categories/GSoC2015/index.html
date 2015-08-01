@@ -53,6 +53,45 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2015-08-01T15:08:21.000Z"><a href="/2015/08/01/GSoC-2015-Week10/">Aug 1 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/08/01/GSoC-2015-Week10/">GSoC 2015 Week10</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>This is just another week about bug-fixing and html template convertion, same trivial stuff like usual.</p>
+<p>I was mainly working on getting <code>OAuth</code> module updated, during which I found out that I’ve made a bunch of big mistakes last year and my code wasn’t deployed… It took a lot of time for me to review the OAuth2 protocol and the packages we were using. I kind of just rewrote what Elliott had written in another superficially different style without thorough understanding of the tools and protocol I was using that time, and hence bugs were left. It was all the fault of laziness and should be prevented in future.</p>
+<p>Anyway, the logic has been rewrittened with more careful examination and a functional test, which utilizes <code>request</code> to imitate HTTP requests and <code>cheerio</code> to manipulate HTML document in server side, has been added.</p>
+<h4 id="A_Severe_Potential_Bug">A Severe Potential Bug</h4><p>While I was doing the testing, I found out a potential danger of <code>Mongoose</code> searching. Usaully we do searching like <code>Model.find(conditions)</code> where <code>conditions</code> is a <code>Object</code> containing (key: value) pairs that we want our documents to match. However, if some value is <code>undefined</code>, that pair will be ignored. </p>
+<p>A very bad example:</p>
+<p>I want to search <code>{foo: bar}</code>, however, as <code>bar</code> is <code>undefined</code> it turns into <code>Model.find({})</code>, which will return every existing document of that collection.</p>
+<p>What a terrible thing! You can’t be careful enough to do the DB querys, and I’m filtering the Dashboard now. There is better none of this potential vulnerabilities.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2015-07-25T15:08:14.000Z"><a href="/2015/07/25/GSoC-2015-Week9/">Jul 25 2015</a></time>
       
       
@@ -409,44 +448,11 @@
 
 
   
-    <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
-        <time datetime="2015-05-01T03:44:36.000Z"><a href="/2015/05/01/GSoC-2015-New-Start/">May 1 2015</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2015/05/01/GSoC-2015-New-Start/">GSoC 2015: New Start</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <p>Well, I’ve been luckily enough to get selected in this year’s GSoC with OpenMRS again. </p>
-<p>I’ll continue to work on the Dashboard, to make it a better and mature platform, as the works I did last year was a rookie’s first trial. Though it has been running well for quiet a long time, there are appreicably problems remained, as mentioned <a href="https://talk.openmrs.org/t/some-id-dashboard-improvement-ideas/1296" target="_blank" rel="external">here</a></p>
-<p>I hope I’ll solve those problems during this summer, and present a better ID Dashboard.</p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-  
 
   <nav id="pagination">
   
+  
+    <a href="/categories/GSoC2015/page/2/" class="alignright next">下一頁</a>
   
   <div class="clearfix"></div>
 </nav>
@@ -468,7 +474,7 @@
   
     <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>11</small></li>
   
     <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
   
@@ -489,7 +495,7 @@
   
     <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>11</small></li>
   
     <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
   
@@ -509,7 +515,7 @@
   
     <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
   
-    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>24</small></li>
   
     <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
   

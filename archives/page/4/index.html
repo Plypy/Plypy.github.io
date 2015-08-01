@@ -53,6 +53,63 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2014-06-14T11:56:26.000Z"><a href="/2014/06/14/the-4th-week-of-gsoc/">Jun 14 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/06/14/the-4th-week-of-gsoc/">The 4th Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Let’s sum up the 4th week of GSoC!!! </p>
+<p>First, another hard one, I’ve used a lot of time to fix bug of some async logic. :/</p>
+<h3 id="What_I_Have_Done">What I Have Done</h3><ol>
+<li><p>Roughly finished the work of integrating the new Mongo<em> data model with the signup module. Now you can create new account in Mongo</em>, but you can’t log in yet…</p>
+</li>
+<li><p>Fixed the <a href="https://issues.openmrs.org/browse/ID-6" target="_blank" rel="external">ID-6</a>. Small defect about the login hint message, easy to fix, just adding a link will be fine. But I think there is still some room for improvement. Maybe when user filled out the form, they can be redirected to the original page. Or simply make it default to open a new page for that link, since there is still the verification work.</p>
+</li>
+<li><p>Fixed the <a href="https://issues.openmrs.org/browse/ID-14" target="_blank" rel="external">ID-14</a>, which is about the verification email. The old dashboard will sent the verification email, even if the account isn’t got created. This can be easily solved by using <a href="https://github.com/caolan/async" target="_blank" rel="external">async</a> library. Just simply using <a href="https://github.com/caolan/async#seriestasks-callback" target="_blank" rel="external">async.series()</a> will do the trick.</p>
+</li>
+<li><p>Reimplemented the validation middleware for signup module. Again, by using <a href="https://github.com/caolan/async" target="_blank" rel="external">async</a>, the whole control flow is clearer now. I’ve spent most of my time on that, because I made some rookie mistakes on writing async code in Node.js.</p>
+</li>
+<li><p>Created and fixed the <a href="https://issues.openmrs.org/browse/ID-29" target="_blank" rel="external">ID-29</a>. This issue is about the reuse of typed values of validation form. If the user typed some wrong values, the old dashboard won’t cache them, so user have to type them again. Small bugs, but annoying.</p>
+</li>
+</ol>
+<h3 id="What_I_Will_Do">What I Will Do</h3><ol>
+<li><p>Complet the work of signup module, and march on auth(login logout) and profile module.</p>
+</li>
+<li><p>Continue improve the validation code.</p>
+</li>
+<li><p>Fix some more issues.</p>
+</li>
+<li><p>Test the Mongoose to see whether is possible for users to change the schema when the server is running. And whether that is a good idea… For details you can see this <a href="https://talk.openmrs.org/t/api-data-model-design-discussion-free-form-data/282" target="_blank" rel="external">talk</a> posted by Elliott.</p>
+</li>
+</ol>
+<p>That’s it.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2014-06-07T17:04:24.000Z"><a href="/2014/06/08/the-3rd-week-of-gsoc/">Jun 8 2014</a></time>
       
       
@@ -524,72 +581,13 @@ So we can use it by simply <code>require</code>ing it in other files.</p>
 
 
   
-    <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
-        <time datetime="2014-05-14T02:03:16.000Z"><a href="/2014/05/14/hello-world/">May 14 2014</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2014/05/14/hello-world/">hello world</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <h3 id="First_trial_post">First trial post</h3><p>Asterisk line below</p>
-<hr>
-<p><em>italic</em></p>
-<p><strong>bold</strong></p>
-<p><strong><em>italic bold</em></strong></p>
-<blockquote>
-<p>quote here</p>
-</blockquote>
-<p>Below is a <code>codeblock</code></p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> a = <span class="function"><span class="keyword">function</span>(<span class="params">req, res</span>) </span>&#123;&#125;;</span><br></pre></td></tr></table></figure>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">gcd</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (b)</span><br><span class="line">        <span class="keyword">return</span> gcd(b,a%b);</span><br><span class="line">    <span class="keyword">return</span> a;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> a, b;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">"%d%d"</span>, &amp;a, &amp;b);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>, gcd(a,b));</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><a href="http://pages.plypy.com">A link here</a></p>
-<ol>
-<li>First</li>
-<li>Second<ol>
-<li>Sublist<ul>
-<li>Sub-sublist</li>
-<li>one more</li>
-</ul>
-</li>
-</ol>
-</li>
-<li>End</li>
-</ol>
-<p>Paragraph 1</p>
-<p>Paragraph 2</p>
-<p>Paragraph 3</p>
-<p>Paragraph 4</p>
-<p>Paragraph 5</p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-  
 
   <nav id="pagination">
   
     <a href="/archives/page/3/" class="alignleft prev">上一頁</a>
   
+  
+    <a href="/archives/page/5/" class="alignright next">下一頁</a>
   
   <div class="clearfix"></div>
 </nav>
@@ -611,7 +609,7 @@ So we can use it by simply <code>require</code>ing it in other files.</p>
   
     <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>10</small></li>
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>11</small></li>
   
     <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
   
@@ -632,7 +630,7 @@ So we can use it by simply <code>require</code>ing it in other files.</p>
   
     <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>10</small></li>
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>11</small></li>
   
     <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
   
@@ -652,7 +650,7 @@ So we can use it by simply <code>require</code>ing it in other files.</p>
   
     <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
   
-    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>23</small></li>
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>24</small></li>
   
     <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
   
