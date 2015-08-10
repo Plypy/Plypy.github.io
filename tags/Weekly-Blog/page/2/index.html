@@ -53,6 +53,48 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2015-05-30T03:24:05.000Z"><a href="/2015/05/30/GSoC-2015-Week1/">May 30 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/05/30/GSoC-2015-Week1/">GSoC 2015: Week1</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>The first week has passed with not too many troubles, and I hope that this could last for the whole summer. :)</p>
+<p>Though having pressure to deal with school works as well, I still managed to deliver some simple work. It’s <a href="https://issues.openmrs.org/browse/ID-105" target="_blank" rel="external">ID-105</a> that concerns about creating and synchronizing the OpenMRS-ID with Talk’s account system.</p>
+<p>Well, originally I thought this would be a simple task that only costs a few hours. However, it’s not that easy. From my work log, I can recall that I’ve spent one and a half day to get the testing environment set up. The Discourse has a paucity of documentation, like many start-up opensource projects, and it’s also a Ruby on Rails project, which is a technique I’m totally unfamiliar with. And after setting up the environment, I then used a day to mess around with its API, which turns out to be inappropriate. :/ So exhausted I am, I decided to use the brutal-force way, which is to imitate user’s login behaviour as SSO will handle the sync automatically.</p>
+<p>Right before I deliver my PR, Robby notified me about the newly added PR convention of OpenMRS listed <a href="http://en.flossmanuals.net/openmrs-developers-guide/development-process/" target="_blank" rel="external">here</a>. The guide suggests us to use <code>git rebase</code> to squash all commits into one and then make the PR. That’s indeed very thoughtful idea. It’s a pity that I only know this now. And then I wrote another script for syncing current accounts.</p>
+<p>Anyway to sum up briefly:</p>
+<h2 id="What_I_Have_Done">What I Have Done</h2><ul>
+<li>Added an auto-sync hook for TALK.</li>
+<li>Wrote a script to import current accouts.</li>
+</ul>
+<p>Actually…… It’s not so much that I have done. Sorry, used a few days to get familiar to development again.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2014-08-17T16:29:23.000Z"><a href="/2014/08/18/The-Last-Weekly-post-for-GSoC/">Aug 18 2014</a></time>
       
       
@@ -442,63 +484,6 @@
 
 
   
-    <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
-        <time datetime="2014-06-14T11:56:26.000Z"><a href="/2014/06/14/the-4th-week-of-gsoc/">Jun 14 2014</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2014/06/14/the-4th-week-of-gsoc/">The 4th Week of GSoC</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <p>Let’s sum up the 4th week of GSoC!!! </p>
-<p>First, another hard one, I’ve used a lot of time to fix bug of some async logic. :/</p>
-<h3 id="What_I_Have_Done">What I Have Done</h3><ol>
-<li><p>Roughly finished the work of integrating the new Mongo<em> data model with the signup module. Now you can create new account in Mongo</em>, but you can’t log in yet…</p>
-</li>
-<li><p>Fixed the <a href="https://issues.openmrs.org/browse/ID-6" target="_blank" rel="external">ID-6</a>. Small defect about the login hint message, easy to fix, just adding a link will be fine. But I think there is still some room for improvement. Maybe when user filled out the form, they can be redirected to the original page. Or simply make it default to open a new page for that link, since there is still the verification work.</p>
-</li>
-<li><p>Fixed the <a href="https://issues.openmrs.org/browse/ID-14" target="_blank" rel="external">ID-14</a>, which is about the verification email. The old dashboard will sent the verification email, even if the account isn’t got created. This can be easily solved by using <a href="https://github.com/caolan/async" target="_blank" rel="external">async</a> library. Just simply using <a href="https://github.com/caolan/async#seriestasks-callback" target="_blank" rel="external">async.series()</a> will do the trick.</p>
-</li>
-<li><p>Reimplemented the validation middleware for signup module. Again, by using <a href="https://github.com/caolan/async" target="_blank" rel="external">async</a>, the whole control flow is clearer now. I’ve spent most of my time on that, because I made some rookie mistakes on writing async code in Node.js.</p>
-</li>
-<li><p>Created and fixed the <a href="https://issues.openmrs.org/browse/ID-29" target="_blank" rel="external">ID-29</a>. This issue is about the reuse of typed values of validation form. If the user typed some wrong values, the old dashboard won’t cache them, so user have to type them again. Small bugs, but annoying.</p>
-</li>
-</ol>
-<h3 id="What_I_Will_Do">What I Will Do</h3><ol>
-<li><p>Complet the work of signup module, and march on auth(login logout) and profile module.</p>
-</li>
-<li><p>Continue improve the validation code.</p>
-</li>
-<li><p>Fix some more issues.</p>
-</li>
-<li><p>Test the Mongoose to see whether is possible for users to change the schema when the server is running. And whether that is a good idea… For details you can see this <a href="https://talk.openmrs.org/t/api-data-model-design-discussion-free-form-data/282" target="_blank" rel="external">talk</a> posted by Elliott.</p>
-</li>
-</ol>
-<p>That’s it.</p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-  
 
   <nav id="pagination">
   
@@ -527,7 +512,7 @@
   
     <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>11</small></li>
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>12</small></li>
   
     <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
   
@@ -548,7 +533,7 @@
   
     <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>11</small></li>
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>12</small></li>
   
     <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
   
@@ -568,7 +553,7 @@
   
     <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
   
-    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>24</small></li>
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>25</small></li>
   
     <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
   

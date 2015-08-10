@@ -53,6 +53,48 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2015-05-30T03:24:05.000Z"><a href="/2015/05/30/GSoC-2015-Week1/">May 30 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/05/30/GSoC-2015-Week1/">GSoC 2015: Week1</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>The first week has passed with not too many troubles, and I hope that this could last for the whole summer. :)</p>
+<p>Though having pressure to deal with school works as well, I still managed to deliver some simple work. It’s <a href="https://issues.openmrs.org/browse/ID-105" target="_blank" rel="external">ID-105</a> that concerns about creating and synchronizing the OpenMRS-ID with Talk’s account system.</p>
+<p>Well, originally I thought this would be a simple task that only costs a few hours. However, it’s not that easy. From my work log, I can recall that I’ve spent one and a half day to get the testing environment set up. The Discourse has a paucity of documentation, like many start-up opensource projects, and it’s also a Ruby on Rails project, which is a technique I’m totally unfamiliar with. And after setting up the environment, I then used a day to mess around with its API, which turns out to be inappropriate. :/ So exhausted I am, I decided to use the brutal-force way, which is to imitate user’s login behaviour as SSO will handle the sync automatically.</p>
+<p>Right before I deliver my PR, Robby notified me about the newly added PR convention of OpenMRS listed <a href="http://en.flossmanuals.net/openmrs-developers-guide/development-process/" target="_blank" rel="external">here</a>. The guide suggests us to use <code>git rebase</code> to squash all commits into one and then make the PR. That’s indeed very thoughtful idea. It’s a pity that I only know this now. And then I wrote another script for syncing current accounts.</p>
+<p>Anyway to sum up briefly:</p>
+<h2 id="What_I_Have_Done">What I Have Done</h2><ul>
+<li>Added an auto-sync hook for TALK.</li>
+<li>Wrote a script to import current accouts.</li>
+</ul>
+<p>Actually…… It’s not so much that I have done. Sorry, used a few days to get familiar to development again.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2015-05-01T03:44:36.000Z"><a href="/2015/05/01/GSoC-2015-New-Start/">May 1 2015</a></time>
       
       
@@ -383,7 +425,7 @@ with ARMv6 assembly.</p>
   
     <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>11</small></li>
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>12</small></li>
   
     <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
   
@@ -404,7 +446,7 @@ with ARMv6 assembly.</p>
   
     <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>11</small></li>
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>12</small></li>
   
     <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
   
@@ -424,7 +466,7 @@ with ARMv6 assembly.</p>
   
     <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
   
-    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>24</small></li>
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>25</small></li>
   
     <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
   

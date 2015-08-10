@@ -49,6 +49,58 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2014-05-14T09:40:35.000Z"><a href="/2014/05/14/build-this-site/">May 14 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/05/14/build-this-site/">Build This Site</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>The reasons I abandon my oringinal ghost blog are the slowness (for poor connection of my university) and the capacitance limitaion of OpenShift.</p>
+<p>After messing around with Github Pages and Jekyll for a whole day, I finally found the amazing Hexo.</p>
+<p>So here is what I have done to make this site available.</p>
+<h3 id="Jekyll_Attempt">Jekyll Attempt</h3><p>First, I used Jekyll to build my site.</p>
+<p>But later I found it somehow hard to handle. Here are few reasons,</p>
+<ul>
+<li>It’s hard to switch themes.</li>
+<li>It’s written in Ruby, which I have little knowledge of.</li>
+<li>Though Jekyll has built-in syntax highlighting, it doesn’t support Markdown style codeblocks. And the Github-Pages has limited the gem plugins, so I can’t use kramdown with coderay either.</li>
+<li>I don’t like Liquid, and prefer to use mere Markdown for better portability.</li>
+</ul>
+<p>Though after some google work, I found Google Code Prettify and make it work with Markdown. But the whole process are just painful to me, I hate it.</p>
+<h3 id="Hexo">Hexo</h3><p>So I turned to Hexo.</p>
+<p>Like Jekyll, Hexo is a static website generator, but written in Node.js. So it’s faster and simpler.</p>
+<p>It’s much easier to switch themes in Hexo, and I choosed Light theme designed by the Hexo author.</p>
+<p>Howerver when I choose the theme, I encountered some problems. Though I changed the theme in <code>config.yml</code>, when I <code>hexo generate</code>, hexo won’t generate new css file. It seems that the <code>generate</code> will cache the css file. </p>
+<p>Solutions are simple, run <code>hexo clean</code>, and then <code>hexo generate</code>. That will clear the cache and generate grand new files for you.</p>
+<p>And now, Let’s say a colorful <em>hello</em> to the <strong>world</strong>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">#<span class="keyword">include</span> &lt;stdio.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"Hello world!"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Nevertheless, this site is still under construction. I’ll enhance categories and tags functionalities. But I suppose, it should fit my bisic needs currently.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2014-05-14T02:03:16.000Z"><a href="/2014/05/14/hello-world/">May 14 2014</a></time>
       
       
@@ -129,7 +181,7 @@
   
     <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>11</small></li>
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>12</small></li>
   
     <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
   
@@ -150,7 +202,7 @@
   
     <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>11</small></li>
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>12</small></li>
   
     <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
   
@@ -170,7 +222,7 @@
   
     <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
   
-    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>24</small></li>
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>25</small></li>
   
     <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
   
