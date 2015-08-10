@@ -60,7 +60,8 @@
     <div class="entry">
       
         <p>GSoC 2015 is about to the end. I’ve been working mainly on things that fix small issues now.</p>
-<p>This week I managed to add Travis-CI support, which is commonly used free Continuous Integration services platform, to our project. </p>
+<p>This week I managed to add Travis-CI support, which is commonly used free Continuous Integration services platform, to our project. It will provide you a VM for testing, where you need to provide scripts, .travis.yml, to set up the envrionment. For Dashboard, I need to get the OpenLDAP stuff and Mongo installed. This is where things are getting a little tricky as OpenLDAP installation requires some interactions. Luckily enough, I found out that I can set envrionment variable <code>DEBIANFRONTEND=noninteractive</code> to disable shell interactions, as we can configure it via configuration files later anyway.</p>
+<p>My travis works are placed in this <a href="https://github.com/Plypy/openmrs-id-travis-test" target="_blank" rel="external">repo</a> specifically created for testing.</p>
 
       
     </div>
