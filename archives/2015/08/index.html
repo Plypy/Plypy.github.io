@@ -53,6 +53,43 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2015-08-12T02:59:42.000Z"><a href="/2015/08/12/The-First-Ping/">Aug 12 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/08/12/The-First-Ping/">The First Ping</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Few days ago I decided to write a basic PING program to practice my C programing skills and network stuff. And it turns out to be a 2 days work, I really have tasted the difficulities of C programing after I spent hours on location bugs of operator priority and wrongly regarding pointer as struct. Actually by retrospection, apart from these stupid mistakes, this work is not very hard. It’s just that so many new concepts need to be learnt first.</p>
+<p>The PING program, as <a href="https://en.wikipedia.org/wiki/Ping_(networking_utility)" target="_blank" rel="external">wiki</a> says,is used to measure the round trip time(RTT) of remote and local machines for network diagnosis purpose. This <a href="http://www.ping127001.com/pingpage.htm" target="_blank" rel="external">page</a> vividly describes what it does and how it came out.</p>
+<p>Basically PING runs on ICMP protocol which belongs to IP protocol family. And it utilizes the ECHO REQUEST, which by definition will trigger the remote to send back a ECHO REPLY packet that carries the exactly same payload sent, packet to measure the RTT. Usually it’s achieved by using the current time as the payload and perform a substraction when we got the reply.</p>
+<p>So to implement it, basic understandings of ICMP and Socket are certainly necessary. And most time I spent is to understand them. As I had not gotten a book around, I found a few example sources and studied by researching them. Though I can guess some lines of code literally, it indeed costed me lots of time to study the structs and constants used. If not counting these things, things were fine, I just need to create a right address and find the right protocol then assign them to a raw socket, and then set the proper header like checksum, send it and receive it at last.</p>
+<p>C programming requires siginificant patience and carefulness.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2015-08-09T13:03:59.000Z"><a href="/2015/08/09/GSoC-2015-Week11/">Aug 9 2015</a></time>
       
       
@@ -208,11 +245,15 @@
   
     <li><a href="/tags/network/">network</a><small>1</small></li>
   
+    <li><a href="/tags/ping/">ping</a><small>1</small></li>
+  
     <li><a href="/tags/pipe/">pipe</a><small>1</small></li>
   
     <li><a href="/tags/rasberry-pi/">rasberry-pi</a><small>1</small></li>
   
     <li><a href="/tags/signal/">signal</a><small>1</small></li>
+  
+    <li><a href="/tags/socket/">socket</a><small>1</small></li>
   
     <li><a href="/tags/unique-index/">unique-index</a><small>1</small></li>
   

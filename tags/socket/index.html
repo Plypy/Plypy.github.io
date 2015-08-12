@@ -3,15 +3,13 @@
 <head>
   <meta charset="utf-8">
   
-  <title>GSoC 2015 Week5 | Pages of Ply_py</title>
+  <title>socket | Pages of Ply_py</title>
   <meta name="author" content="Weihua Cheung">
-  
-  <meta name="description" content="It’s about the midterm evaluation. Things have been proceeding fine thus far. Like last year I’ve made a report and published here. It’s been kind of ">
   
   
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <meta property="og:title" content="GSoC 2015 Week5"/>
+  
   <meta property="og:site_name" content="Pages of Ply_py"/>
 
   
@@ -44,63 +42,39 @@
 </nav>
 <div class="clearfix"></div></header>
   <div id="content" class="inner">
-    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+<h2 class="archive-title tag">socket</h2>
+
+
+  
+    <article class="post">
   
   <div class="post-content">
     <header>
       
         <div class="icon"></div>
-        <time datetime="2015-06-27T02:35:04.000Z"><a href="/2015/06/27/GSoC-2015-Week5/">Jun 27 2015</a></time>
+        <time datetime="2015-08-12T02:59:42.000Z"><a href="/2015/08/12/The-First-Ping/">Aug 12 2015</a></time>
       
       
   
-    <h1 class="title">GSoC 2015 Week5</h1>
+    <h1 class="title"><a href="/2015/08/12/The-First-Ping/">The First Ping</a></h1>
   
 
     </header>
     <div class="entry">
       
-        <p>It’s about the midterm evaluation. Things have been proceeding fine thus far. Like last year I’ve made a report and published <a href="https://talk.openmrs.org/t/gsoc-2015-openmrs-id-v2-1-platform-improvements-midterm-presentation/2261/7" target="_blank" rel="external">here</a>. It’s been kind of taxing to record it as my English isn’t very good and I haven’t fully recovered from pharyngitis. And sadly few days later, it got severer again… :/</p>
-<p>Besides the report, I’ve also mainly delivered:</p>
-<ul>
-<li>bug fixes for ID-89</li>
-<li>more work about ID-88</li>
-</ul>
+        <p>Few days ago I decided to write a basic PING program to practice my C programing skills and network stuff. And it turns out to be a 2 days work, I really have tasted the difficulities of C programing after I spent hours on location bugs of operator priority and wrongly regarding pointer as struct. Actually by retrospection, apart from these stupid mistakes, this work is not very hard. It’s just that so many new concepts need to be learnt first.</p>
+<p>The PING program, as <a href="https://en.wikipedia.org/wiki/Ping_(networking_utility)" target="_blank" rel="external">wiki</a> says,is used to measure the round trip time(RTT) of remote and local machines for network diagnosis purpose. This <a href="http://www.ping127001.com/pingpage.htm" target="_blank" rel="external">page</a> vividly describes what it does and how it came out.</p>
+<p>Basically PING runs on ICMP protocol which belongs to IP protocol family. And it utilizes the ECHO REQUEST, which by definition will trigger the remote to send back a ECHO REPLY packet that carries the exactly same payload sent, packet to measure the RTT. Usually it’s achieved by using the current time as the payload and perform a substraction when we got the reply.</p>
+<p>So to implement it, basic understandings of ICMP and Socket are certainly necessary. And most time I spent is to understand them. As I had not gotten a book around, I found a few example sources and studied by researching them. Though I can guess some lines of code literally, it indeed costed me lots of time to study the structs and constants used. If not counting these things, things were fine, I just need to create a right address and find the right protocol then assign them to a raw socket, and then set the proper header like checksum, send it and receive it at last.</p>
+<p>C programming requires siginificant patience and carefulness.</p>
 
       
     </div>
     <footer>
       
         
-  
-  <div class="categories">
-    <a href="/categories/GSoC2015/">GSoC2015</a>
-  </div>
-
         
-  
-  <div class="tags">
-    <a href="/tags/GSoC2015/">GSoC2015</a>, <a href="/tags/Weekly-Blog/">Weekly-Blog</a>
-  </div>
-
-        
-  <div class="addthis addthis_toolbox addthis_default_style">
-    
-      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
-    
-    
-      <a class="addthis_button_tweet"></a>
-    
-    
-      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
-    
-    
-      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
-    
-    <a class="addthis_counter addthis_pill_style"></a>
-  </div>
-  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
-
       
       <div class="clearfix"></div>
     </footer>
@@ -108,26 +82,14 @@
 </article>
 
 
-<section id="comment">
-  <h1 class="title">留言</h1>
 
   
-      <div id="fb-root"></div>
-<script>
-  (function(d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0];
-    if (d.getElementById(id)) return;
-    js = d.createElement(s); js.id = id;
-    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
-    fjs.parentNode.insertBefore(js, fjs);
-  }(document, 'script', 'facebook-jssdk'));
-</script>
 
-<div class="fb-comments" data-href="http://pages.plypy.com/2015/06/27/GSoC-2015-Week5/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
-      
+  <nav id="pagination">
   
-</section>
-
+  
+  <div class="clearfix"></div>
+</nav>
 </div></div>
     <aside id="sidebar" class="alignright">
   <div class="search">
@@ -245,7 +207,7 @@ var disqus_shortname = 'plypy';
   var dsq = document.createElement('script');
   dsq.type = 'text/javascript';
   dsq.async = true;
-  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
   (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
 }());
 </script>
