@@ -49,6 +49,49 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2014-05-14T13:16:06.000Z"><a href="/2014/05/14/openldap-problem/">May 14 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/05/14/openldap-problem/">OpenLDAP Problem</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2 id="var/run/slapd_Problem">var/run/slapd Problem</h2><p>Today when I tried to start my OpenLDAP server by directly using <code>slapd</code> command,  it’s surprisingly failed. It logged this</p>
+<pre><code>unable <span class="built_in">to</span> <span class="built_in">open</span> <span class="built_in">file</span> <span class="string">"/var/run/slapd/slapd.pid"</span>: <span class="number">2</span> (No such <span class="built_in">file</span> <span class="operator">or</span> <span class="built_in">directory</span>)
+</code></pre><p>It seems the <code>var/run/slapd</code> folder is missing. </p>
+<p>But if I use <code>service slapd start</code> it will succeed, and generate <code>var/run/slapd</code> correctly. However, after reboot this folder will once again disappear.</p>
+<p>After some search, I found that every time when Ubuntu boot, the <code>var/run</code> are empty at first, and each folder will be created dynamically by individual service as they start.</p>
+<p>And then I remembered that some time before I’ve used <code>chkconfig</code> to disable slapd from auto startup.</p>
+<p>So the solution is simple, just use <code>chkconfig slapd on</code> to enable it.</p>
+<h2 id="Service_problem">Service problem</h2><p>But after that I encountered the old slapd service problem again, that is the slapd service don’t have right permission to access the db file because of some problems related with Ubuntu’s Apparmor mechanism(SELinux).</p>
+<p>And it’s the exact reson I disabled slapd service.</p>
+<p>Now I have to <code>sudo service slapd stop</code> first and then use the command below to start slapd manually.</p>
+<pre><code>sudo slapd <span class="operator">-d</span> <span class="number">1</span> <span class="operator">-f</span> /etc/ldap/slapd.conf
+</code></pre>
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2014-05-14T10:46:43.000Z"><a href="/2014/05/14/gsoc2014-pre-post/">May 14 2014</a></time>
       
       
@@ -225,7 +268,7 @@
   
     <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>12</small></li>
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>13</small></li>
   
     <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
   
@@ -246,7 +289,7 @@
   
     <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>12</small></li>
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>13</small></li>
   
     <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
   
@@ -266,7 +309,7 @@
   
     <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
   
-    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>25</small></li>
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>26</small></li>
   
     <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
   

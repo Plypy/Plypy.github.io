@@ -53,6 +53,59 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2014-07-03T13:40:15.000Z"><a href="/2014/07/03/the-openmrs-id-dashboard-20/">Jul 3 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/07/03/the-openmrs-id-dashboard-20/">The OpenMRS ID Dashboard 2.0</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Finally, after weeks of exploring and attempting, the new dashboard is nearly in place.</p>
+<p>The main purpose of Dashboard 2.0 is to provide a extendable user model for OpenMRS ID, so we used MongoDB as the backend database. Hence we can add some free-form data to database, as discussed and explained in these talks.
+<a href="https://talk.openmrs.org/t/gsoc-2014-openmrs-id-platform-improvements-midterm-presentation/321" target="_blank" rel="external">My Midterm presentation</a>
+<a href="https://talk.openmrs.org/t/api-data-model-design-discussion-free-form-data/282" target="_blank" rel="external">Disscussion </a></p>
+<h3 id="Concern_for_LDAP">Concern for LDAP</h3><p>While gaining the new features, we can’t leave the older behind. So for backward compatibility, we have to reserve a LDAP server, so those Atlassian Crowd based apps could be happy as usual. </p>
+<p>My original plan was to create a LDAP layer on top of the new user data model via <a href="http://ldapjs.org/" target="_blank" rel="external">ldapjs</a>. However, after some attempts, I found that its not feasible, or more accurately, efficient.
+So I turned to the sync plan. Specificly, we’ll remain the OpenLDAP server and sync with it. Although this sync is one-directional, that is, we can only sync the changes from MongoDB side to LDAP.</p>
+<p>For data migration, currently I don’t have a good idea, because I don’t know much about the production. So for quickly putting Dashboard 2.0 into production and test, I choosed a dynamic migration approach. In detail, I’ve bound a query of LDAP to one query method of Mongo, when I don’t find any record in Mongo I’ll query in LDAP, and if there is one in LDAP, I’ll copy that in Mongo.</p>
+<h3 id="New_Procedure_for_Signup">New Procedure for Signup</h3><p>I’ll demonstrate this in one diagram, see.</p>
+<p><img src="https://lh4.googleusercontent.com/-fk154LsyjMM/U7WFmJq69gI/AAAAAAAAAwg/z1MnsqJU4X4/w726-h565-no/OpenMRS-ID-Dashboard-Procedure.png" alt="Signup Procedure" title="Signup Procedure"></p>
+<h3 id="Something_about_Data_Model">Something about Data Model</h3><p>Our user related data models are very simple. We only have user and groups schema.</p>
+<p>Except from those basic attributes, 2 things need to be mention exclusively.</p>
+<h5 id="The_user-extra">The <code>user.extra</code></h5><p>it’s in <a href="http://mongoosejs.com/docs/api.html#schema-mixed-js" target="_blank" rel="external">Mixed</a> type. So you may treat it as a normal json object.</p>
+<p>In future, we’ll use that to store all kinds of other things other clients put into via our API. See this in detail,
+<a href="https://talk.openmrs.org/t/api-data-model-design-discussion-free-form-data/282" target="_blank" rel="external">Disscussion </a></p>
+<h5 id="The_relation_between_Groups_and_Users">The relation between <code>Groups</code> and <code>Users</code></h5><p>One user may be member of different groups, and each group has different users, so it’s a “many to many” relation.</p>
+<p>To manage relationship in Mongo*, just store the ObjectId of one doc into another, so you can easily reference each other</p>
+<p>But considering the number of groups will be small anyway, so for the sake of simplicity, I’ve just stored the group names in user docs.</p>
+<p>And to easily get all the members of one group, each group will have a <code>userList</code> array containing usernames and ObjectIds. Having usernames known, we don’t have to really query for users in most cases.</p>
+<p>However, Mongo* don’t have built-in mechanism to query the array belong to one document. But again, considering we won’t have too much users :|, I’ll just do a plain O(n) one by one search. No need to use any data structrue and algorthim, hahahahhhhhhh…</p>
+<p>That should be it.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2014-06-28T21:10:34.000Z"><a href="/2014/06/29/the-6th-week-of-gsoc/">Jun 29 2014</a></time>
       
       
@@ -537,49 +590,6 @@ So we can use it by simply <code>require</code>ing it in other files.</p>
 
 
   
-    <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
-        <time datetime="2014-05-14T13:16:06.000Z"><a href="/2014/05/14/openldap-problem/">May 14 2014</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2014/05/14/openldap-problem/">OpenLDAP Problem</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <h2 id="var/run/slapd_Problem">var/run/slapd Problem</h2><p>Today when I tried to start my OpenLDAP server by directly using <code>slapd</code> command,  it’s surprisingly failed. It logged this</p>
-<pre><code>unable <span class="built_in">to</span> <span class="built_in">open</span> <span class="built_in">file</span> <span class="string">"/var/run/slapd/slapd.pid"</span>: <span class="number">2</span> (No such <span class="built_in">file</span> <span class="operator">or</span> <span class="built_in">directory</span>)
-</code></pre><p>It seems the <code>var/run/slapd</code> folder is missing. </p>
-<p>But if I use <code>service slapd start</code> it will succeed, and generate <code>var/run/slapd</code> correctly. However, after reboot this folder will once again disappear.</p>
-<p>After some search, I found that every time when Ubuntu boot, the <code>var/run</code> are empty at first, and each folder will be created dynamically by individual service as they start.</p>
-<p>And then I remembered that some time before I’ve used <code>chkconfig</code> to disable slapd from auto startup.</p>
-<p>So the solution is simple, just use <code>chkconfig slapd on</code> to enable it.</p>
-<h2 id="Service_problem">Service problem</h2><p>But after that I encountered the old slapd service problem again, that is the slapd service don’t have right permission to access the db file because of some problems related with Ubuntu’s Apparmor mechanism(SELinux).</p>
-<p>And it’s the exact reson I disabled slapd service.</p>
-<p>Now I have to <code>sudo service slapd stop</code> first and then use the command below to start slapd manually.</p>
-<pre><code>sudo slapd <span class="operator">-d</span> <span class="number">1</span> <span class="operator">-f</span> /etc/ldap/slapd.conf
-</code></pre>
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-  
 
   <nav id="pagination">
   
@@ -608,7 +618,7 @@ So we can use it by simply <code>require</code>ing it in other files.</p>
   
     <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>12</small></li>
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>13</small></li>
   
     <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
   
@@ -629,7 +639,7 @@ So we can use it by simply <code>require</code>ing it in other files.</p>
   
     <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>12</small></li>
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>13</small></li>
   
     <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
   
@@ -649,7 +659,7 @@ So we can use it by simply <code>require</code>ing it in other files.</p>
   
     <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
   
-    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>25</small></li>
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>26</small></li>
   
     <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
   

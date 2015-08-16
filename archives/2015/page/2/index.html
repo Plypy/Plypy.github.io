@@ -53,6 +53,46 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2015-06-13T08:08:29.000Z"><a href="/2015/06/13/GSoC-2015-Week3/">Jun 13 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/06/13/GSoC-2015-Week3/">GSoC 2015 Week3</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Another week of exam…</p>
+<p>I’ve mainly done two things this week, finishing ID-89 and ID-102.</p>
+<p>There is not much to talk about ID-102, just deleting and replacing… For ID-89, refactoring <code>ldap.js</code>, It’s been a long time that I noticed that operations related with <code>ldap.js</code> would be much slower than the ordinary. After checking the search operations, I found that the old one will use search which has <code>baseDN</code> of <code>ou=users,dc=openmrs,dc=org</code> and a filter of <code>uid=USERNAME</code>. Then inspired by intuition, I realized that LDAP server may highly possible first fetch all entries under <code>baseDN</code> and then use that filter to select the items. This would be intolerant in production, as we can directly find the entry via <code>DN</code> of <code>uid=USERNAME,ou=users,dc=openmrs,dc=org</code>.</p>
+<p>After performing a little experimentation on my machine and proving that search with direct <code>DN</code> would be 1 times more faster than with <code>filter</code>. I rewrote all the operations in the new ldap.js. Hence, this time, the refactor doesn’t only focus on logic flow and readabilities, but also efficiency.</p>
+<h2 id="TODO_for_Next_Week">TODO for Next Week</h2><ul>
+<li>ES6 investigation</li>
+<li>Something else interesting</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2015-06-06T14:24:44.000Z"><a href="/2015/06/06/GSoC-2015-Week2/">Jun 6 2015</a></time>
       
       
@@ -469,7 +509,7 @@ with ARMv6 assembly.</p>
   
     <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>12</small></li>
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>13</small></li>
   
     <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
   
@@ -490,7 +530,7 @@ with ARMv6 assembly.</p>
   
     <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>12</small></li>
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>13</small></li>
   
     <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
   
@@ -510,7 +550,7 @@ with ARMv6 assembly.</p>
   
     <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
   
-    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>25</small></li>
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>26</small></li>
   
     <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
   

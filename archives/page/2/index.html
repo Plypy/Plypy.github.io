@@ -53,6 +53,46 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2015-06-13T08:08:29.000Z"><a href="/2015/06/13/GSoC-2015-Week3/">Jun 13 2015</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2015/06/13/GSoC-2015-Week3/">GSoC 2015 Week3</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Another week of exam…</p>
+<p>I’ve mainly done two things this week, finishing ID-89 and ID-102.</p>
+<p>There is not much to talk about ID-102, just deleting and replacing… For ID-89, refactoring <code>ldap.js</code>, It’s been a long time that I noticed that operations related with <code>ldap.js</code> would be much slower than the ordinary. After checking the search operations, I found that the old one will use search which has <code>baseDN</code> of <code>ou=users,dc=openmrs,dc=org</code> and a filter of <code>uid=USERNAME</code>. Then inspired by intuition, I realized that LDAP server may highly possible first fetch all entries under <code>baseDN</code> and then use that filter to select the items. This would be intolerant in production, as we can directly find the entry via <code>DN</code> of <code>uid=USERNAME,ou=users,dc=openmrs,dc=org</code>.</p>
+<p>After performing a little experimentation on my machine and proving that search with direct <code>DN</code> would be 1 times more faster than with <code>filter</code>. I rewrote all the operations in the new ldap.js. Hence, this time, the refactor doesn’t only focus on logic flow and readabilities, but also efficiency.</p>
+<h2 id="TODO_for_Next_Week">TODO for Next Week</h2><ul>
+<li>ES6 investigation</li>
+<li>Something else interesting</li>
+</ul>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2015-06-06T14:24:44.000Z"><a href="/2015/06/06/GSoC-2015-Week2/">Jun 6 2015</a></time>
       
       
@@ -548,59 +588,6 @@ After some thoughts about what to write… I found that there is little to updat
 
 
   
-    <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
-        <time datetime="2014-11-08T03:14:33.000Z"><a href="/2014/11/08/VHDL-notes-type-subtype-and-generate/">Nov 8 2014</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2014/11/08/VHDL-notes-type-subtype-and-generate/">VHDL notes type subtype and generate</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <p>Last week’s Lab of Computer Organization Theory, we are asked to implement something that is constituted of several components, so called a hierarchical design, or rather, top down design.</p>
-<p>Anyway, what we have to do is to code serveral basic blocks, and then connect them to form a high-level design.</p>
-<h2 id="type_and_subtype">type and subtype</h2><p>While coding, I found that, I was constantly repeating to write something like,</p>
-<pre><code>a0: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
-a1: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
-a2: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
-a3: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
-</code></pre><p>which is quiet ugly indeed. I was just repeating myself.</p>
-<p>I want to spare my life, so I wonder if there is a 2-dimensional array of <code>std_logic</code>, then I can return to the happay days that I have in C, <code>std_logic a[4][15]</code>.</p>
-<p>There is quiet a lot resources online, so without many pain, I found myself the <code>User defined types</code>. Since what I want is an array of <code>std_logic_vector</code>, I wrote these,</p>
-<pre><code><span class="comment">-- alias for std_logic_vector(15 downto 0)</span>
-<span class="keyword">subtype</span> std_logic_16 <span class="keyword">is</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
-<span class="comment">-- Array type for std_logic_vector</span>
-<span class="keyword">type</span> std_logic_ar16 <span class="keyword">is</span> <span class="keyword">array</span>(<span class="typename">natural</span> <span class="keyword">range</span> &lt;&gt;) <span class="keyword">of</span> std_logic_16;
-</code></pre><p>Now, I can write</p>
-<pre><code><span class="rule"><span class="attribute">a</span>:<span class="value"> in <span class="function">std_logic_ar16</span>(<span class="number">3</span> downto <span class="number">0</span>)</span></span>;
-</code></pre><p>The life is wonderful again! However, the VHDL is different from high-level language, the array type is different from ordinary type. If you want to declare an array, you must use array type, the same goes for nonarray type. In detail, if you want to have a single instance of <code>std_logic_vector</code>, you must write <code>a: std_logic_16</code> , instead of <code>a: std_logic_ar16</code>. </p>
-<p>That seems to be evident, however, I once thought the <code>std_vector_array(15 downto 0)</code> as the <code>int [15]</code>, so I made a stupid mistake regarding <code>std_vector_array</code> as the <code>int</code>. anyway…</p>
-<h2 id="for_generate">for generate</h2><p>While I was mapping the components, the same thing happened again. Say, I have to connect 16 and gates with 16 out ports of an unit. I need to write the <code>port map</code> thing for 16 times… </p>
-<p>The people created VHDL aren’t fools, they have <a href="http://www.ics.uci.edu/~jmoorkan/vhdlref/generate.html" target="_blank" rel="external">for generate</a>.</p>
-<p>Life is once again wonderful.</p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-  
 
   <nav id="pagination">
   
@@ -629,7 +616,7 @@ a3: <span class="keyword">in</span> <span class="typename">std_logic_vector</spa
   
     <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>12</small></li>
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>13</small></li>
   
     <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
   
@@ -650,7 +637,7 @@ a3: <span class="keyword">in</span> <span class="typename">std_logic_vector</spa
   
     <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>12</small></li>
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>13</small></li>
   
     <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
   
@@ -670,7 +657,7 @@ a3: <span class="keyword">in</span> <span class="typename">std_logic_vector</spa
   
     <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
   
-    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>25</small></li>
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>26</small></li>
   
     <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
   

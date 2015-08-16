@@ -49,6 +49,59 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2014-11-08T03:14:33.000Z"><a href="/2014/11/08/VHDL-notes-type-subtype-and-generate/">Nov 8 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/11/08/VHDL-notes-type-subtype-and-generate/">VHDL notes type subtype and generate</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Last week’s Lab of Computer Organization Theory, we are asked to implement something that is constituted of several components, so called a hierarchical design, or rather, top down design.</p>
+<p>Anyway, what we have to do is to code serveral basic blocks, and then connect them to form a high-level design.</p>
+<h2 id="type_and_subtype">type and subtype</h2><p>While coding, I found that, I was constantly repeating to write something like,</p>
+<pre><code>a0: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+a1: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+a2: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+a3: <span class="keyword">in</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+</code></pre><p>which is quiet ugly indeed. I was just repeating myself.</p>
+<p>I want to spare my life, so I wonder if there is a 2-dimensional array of <code>std_logic</code>, then I can return to the happay days that I have in C, <code>std_logic a[4][15]</code>.</p>
+<p>There is quiet a lot resources online, so without many pain, I found myself the <code>User defined types</code>. Since what I want is an array of <code>std_logic_vector</code>, I wrote these,</p>
+<pre><code><span class="comment">-- alias for std_logic_vector(15 downto 0)</span>
+<span class="keyword">subtype</span> std_logic_16 <span class="keyword">is</span> <span class="typename">std_logic_vector</span>(<span class="number">15</span> <span class="keyword">downto</span> <span class="number">0</span>);
+<span class="comment">-- Array type for std_logic_vector</span>
+<span class="keyword">type</span> std_logic_ar16 <span class="keyword">is</span> <span class="keyword">array</span>(<span class="typename">natural</span> <span class="keyword">range</span> &lt;&gt;) <span class="keyword">of</span> std_logic_16;
+</code></pre><p>Now, I can write</p>
+<pre><code><span class="rule"><span class="attribute">a</span>:<span class="value"> in <span class="function">std_logic_ar16</span>(<span class="number">3</span> downto <span class="number">0</span>)</span></span>;
+</code></pre><p>The life is wonderful again! However, the VHDL is different from high-level language, the array type is different from ordinary type. If you want to declare an array, you must use array type, the same goes for nonarray type. In detail, if you want to have a single instance of <code>std_logic_vector</code>, you must write <code>a: std_logic_16</code> , instead of <code>a: std_logic_ar16</code>. </p>
+<p>That seems to be evident, however, I once thought the <code>std_vector_array(15 downto 0)</code> as the <code>int [15]</code>, so I made a stupid mistake regarding <code>std_vector_array</code> as the <code>int</code>. anyway…</p>
+<h2 id="for_generate">for generate</h2><p>While I was mapping the components, the same thing happened again. Say, I have to connect 16 and gates with 16 out ports of an unit. I need to write the <code>port map</code> thing for 16 times… </p>
+<p>The people created VHDL aren’t fools, they have <a href="http://www.ics.uci.edu/~jmoorkan/vhdlref/generate.html" target="_blank" rel="external">for generate</a>.</p>
+<p>Life is once again wonderful.</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2014-11-03T11:47:22.000Z"><a href="/2014/11/03/OSLAB-Adding-a-system-call-to-Linux-kernel/">Nov 3 2014</a></time>
       
       
@@ -512,59 +565,6 @@ sudo <span class="built_in">make</span> install
 
 
 
-  <article class="post">
-  
-  <div class="post-content">
-    <header>
-      
-        <div class="icon"></div>
-        <time datetime="2014-07-03T13:40:15.000Z"><a href="/2014/07/03/the-openmrs-id-dashboard-20/">Jul 3 2014</a></time>
-      
-      
-  
-    <h1 class="title"><a href="/2014/07/03/the-openmrs-id-dashboard-20/">The OpenMRS ID Dashboard 2.0</a></h1>
-  
-
-    </header>
-    <div class="entry">
-      
-        <p>Finally, after weeks of exploring and attempting, the new dashboard is nearly in place.</p>
-<p>The main purpose of Dashboard 2.0 is to provide a extendable user model for OpenMRS ID, so we used MongoDB as the backend database. Hence we can add some free-form data to database, as discussed and explained in these talks.
-<a href="https://talk.openmrs.org/t/gsoc-2014-openmrs-id-platform-improvements-midterm-presentation/321" target="_blank" rel="external">My Midterm presentation</a>
-<a href="https://talk.openmrs.org/t/api-data-model-design-discussion-free-form-data/282" target="_blank" rel="external">Disscussion </a></p>
-<h3 id="Concern_for_LDAP">Concern for LDAP</h3><p>While gaining the new features, we can’t leave the older behind. So for backward compatibility, we have to reserve a LDAP server, so those Atlassian Crowd based apps could be happy as usual. </p>
-<p>My original plan was to create a LDAP layer on top of the new user data model via <a href="http://ldapjs.org/" target="_blank" rel="external">ldapjs</a>. However, after some attempts, I found that its not feasible, or more accurately, efficient.
-So I turned to the sync plan. Specificly, we’ll remain the OpenLDAP server and sync with it. Although this sync is one-directional, that is, we can only sync the changes from MongoDB side to LDAP.</p>
-<p>For data migration, currently I don’t have a good idea, because I don’t know much about the production. So for quickly putting Dashboard 2.0 into production and test, I choosed a dynamic migration approach. In detail, I’ve bound a query of LDAP to one query method of Mongo, when I don’t find any record in Mongo I’ll query in LDAP, and if there is one in LDAP, I’ll copy that in Mongo.</p>
-<h3 id="New_Procedure_for_Signup">New Procedure for Signup</h3><p>I’ll demonstrate this in one diagram, see.</p>
-<p><img src="https://lh4.googleusercontent.com/-fk154LsyjMM/U7WFmJq69gI/AAAAAAAAAwg/z1MnsqJU4X4/w726-h565-no/OpenMRS-ID-Dashboard-Procedure.png" alt="Signup Procedure" title="Signup Procedure"></p>
-<h3 id="Something_about_Data_Model">Something about Data Model</h3><p>Our user related data models are very simple. We only have user and groups schema.</p>
-<p>Except from those basic attributes, 2 things need to be mention exclusively.</p>
-<h5 id="The_user-extra">The <code>user.extra</code></h5><p>it’s in <a href="http://mongoosejs.com/docs/api.html#schema-mixed-js" target="_blank" rel="external">Mixed</a> type. So you may treat it as a normal json object.</p>
-<p>In future, we’ll use that to store all kinds of other things other clients put into via our API. See this in detail,
-<a href="https://talk.openmrs.org/t/api-data-model-design-discussion-free-form-data/282" target="_blank" rel="external">Disscussion </a></p>
-<h5 id="The_relation_between_Groups_and_Users">The relation between <code>Groups</code> and <code>Users</code></h5><p>One user may be member of different groups, and each group has different users, so it’s a “many to many” relation.</p>
-<p>To manage relationship in Mongo*, just store the ObjectId of one doc into another, so you can easily reference each other</p>
-<p>But considering the number of groups will be small anyway, so for the sake of simplicity, I’ve just stored the group names in user docs.</p>
-<p>And to easily get all the members of one group, each group will have a <code>userList</code> array containing usernames and ObjectIds. Having usernames known, we don’t have to really query for users in most cases.</p>
-<p>However, Mongo* don’t have built-in mechanism to query the array belong to one document. But again, considering we won’t have too much users :|, I’ll just do a plain O(n) one by one search. No need to use any data structrue and algorthim, hahahahhhhhhh…</p>
-<p>That should be it.</p>
-
-      
-    </div>
-    <footer>
-      
-        
-        
-      
-      <div class="clearfix"></div>
-    </footer>
-  </div>
-</article>
-
-
-
-
 
 <nav id="pagination">
   
@@ -592,7 +592,7 @@ So I turned to the sync plan. Specificly, we’ll remain the OpenLDAP server and
   
     <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>12</small></li>
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>13</small></li>
   
     <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
   
@@ -613,7 +613,7 @@ So I turned to the sync plan. Specificly, we’ll remain the OpenLDAP server and
   
     <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>12</small></li>
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>13</small></li>
   
     <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
   
@@ -633,7 +633,7 @@ So I turned to the sync plan. Specificly, we’ll remain the OpenLDAP server and
   
     <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
   
-    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>25</small></li>
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>26</small></li>
   
     <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
   
