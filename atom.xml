@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title><![CDATA[Pages of Ply_py]]></title>
+  
+  <link href="/atom.xml" rel="self"/>
+  <link href="http://pages.plypy.com/"/>
+  <updated>2015-08-16T01:19:35.128Z</updated>
+  <id>http://pages.plypy.com/</id>
+  
+  <author>
+    <name><![CDATA[Weihua Cheung]]></name>
+    <email><![CDATA[me@plypy.com]]></email>
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title><![CDATA[About to End, Again]]></title>
+    <link href="http://pages.plypy.com/2015/08/16/GSoC-2015-Week12/"/>
+    <id>http://pages.plypy.com/2015/08/16/GSoC-2015-Week12/</id>
+    <published>2015-08-16T00:58:54.000Z</published>
+    <updated>2015-08-16T01:19:35.128Z</updated>
+    <content type="html"><![CDATA[<p>According to the timeline on melange, GSoC of this year is approaching the end. Actually, tommorrow 17th Aug. is the suggested ‘pencil down’ date. The GSoC experience is really great and having two in a row is indeed something that will rooted in my memory.</p>
+<p>Like last year I worked on the Dashboard this year, it’s mainly about updating things and fixing bugs. However unlike last year’s rookie works, it’s more about efficiency and whole-structure change. Those modules left last year all have gotten updated.</p>
+<p>I’m really not good at the words, so I think this is it. Coding in OpenMRS, “Write code, save lives”!</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>According to the timeline on melange, GSoC of this year is approaching the end. Actually, tommorrow 17th Aug. is the suggested ‘pencil do]]>
+    </summary>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/tags/GSoC2015/"/>
+    
+      <category term="Weekly-Blog" scheme="http://pages.plypy.com/tags/Weekly-Blog/"/>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/categories/GSoC2015/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[The First Ping]]></title>
+    <link href="http://pages.plypy.com/2015/08/12/The-First-Ping/"/>
+    <id>http://pages.plypy.com/2015/08/12/The-First-Ping/</id>
+    <published>2015-08-12T02:59:42.000Z</published>
+    <updated>2015-08-12T15:05:56.458Z</updated>
+    <content type="html"><![CDATA[<p>Few days ago I decided to write a basic PING program to practice my C programing skills and network stuff. And it turns out to be a 2 days work, I really have tasted the difficulities of C programing after I spent hours on location bugs of operator priority and wrongly regarding pointer as struct. Actually by retrospection, apart from these stupid mistakes, this work is not very hard. It’s just that so many new concepts need to be learnt first.</p>
+<p>The PING program, as <a href="https://en.wikipedia.org/wiki/Ping_(networking_utility)" target="_blank" rel="external">wiki</a> says,is used to measure the round trip time(RTT) of remote and local machines for network diagnosis purpose. This <a href="http://www.ping127001.com/pingpage.htm" target="_blank" rel="external">page</a> vividly describes what it does and how it came out.</p>
+<p>Basically PING runs on ICMP protocol which belongs to IP protocol family. And it utilizes the ECHO REQUEST, which by definition will trigger the remote to send back a ECHO REPLY packet that carries the exactly same payload sent, packet to measure the RTT. Usually it’s achieved by using the current time as the payload and perform a substraction when we got the reply.</p>
+<p>So to implement it, basic understandings of ICMP and Socket are certainly necessary. And most time I spent is to understand them. As I had not gotten a book around, I found a few example sources and studied by researching them. Though I can guess some lines of code literally, it indeed costed me lots of time to study the structs and constants used. If not counting these things, things were fine, I just need to create a right address and find the right protocol then assign them to a raw socket, and then set the proper header like checksum, send it and receive it at last.</p>
+<p>C programming requires siginificant patience and carefulness.</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>Few days ago I decided to write a basic PING program to practice my C programing skills and network stuff. And it turns out to be a 2 day]]>
+    </summary>
+    
+      <category term="ping" scheme="http://pages.plypy.com/tags/ping/"/>
+    
+      <category term="socket" scheme="http://pages.plypy.com/tags/socket/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[GSoC 2015 Week11]]></title>
+    <link href="http://pages.plypy.com/2015/08/09/GSoC-2015-Week11/"/>
+    <id>http://pages.plypy.com/2015/08/09/GSoC-2015-Week11/</id>
+    <published>2015-08-09T13:03:59.000Z</published>
+    <updated>2015-08-10T00:59:20.513Z</updated>
+    <content type="html"><![CDATA[<p>GSoC 2015 is about to the end. I’ve been working mainly on things that fix small issues now.</p>
+<p>This week I managed to add Travis-CI support, which is commonly used free Continuous Integration services platform, to our project. It will provide you a VM for testing, where you need to provide scripts, .travis.yml, to set up the envrionment. For Dashboard, I need to get the OpenLDAP stuff and Mongo installed. This is where things are getting a little tricky as OpenLDAP installation requires some interactions. Luckily enough, I found out that I can set envrionment variable <code>DEBIANFRONTEND=noninteractive</code> to disable shell interactions, as we can configure it via configuration files later anyway.</p>
+<p>My travis works are placed in this <a href="https://github.com/Plypy/openmrs-id-travis-test" target="_blank" rel="external">repo</a> specifically created for testing.</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>GSoC 2015 is about to the end. I’ve been working mainly on things that fix small issues now.</p>
+<p>This week I managed to add Travis-CI ]]>
+    </summary>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/tags/GSoC2015/"/>
+    
+      <category term="Weekly-Blog" scheme="http://pages.plypy.com/tags/Weekly-Blog/"/>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/categories/GSoC2015/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[GSoC 2015 Week10]]></title>
+    <link href="http://pages.plypy.com/2015/08/01/GSoC-2015-Week10/"/>
+    <id>http://pages.plypy.com/2015/08/01/GSoC-2015-Week10/</id>
+    <published>2015-08-01T15:08:21.000Z</published>
+    <updated>2015-08-01T15:48:56.740Z</updated>
+    <content type="html"><![CDATA[<p>This is just another week about bug-fixing and html template convertion, same trivial stuff like usual.</p>
+<p>I was mainly working on getting <code>OAuth</code> module updated, during which I found out that I’ve made a bunch of big mistakes last year and my code wasn’t deployed… It took a lot of time for me to review the OAuth2 protocol and the packages we were using. I kind of just rewrote what Elliott had written in another superficially different style without thorough understanding of the tools and protocol I was using that time, and hence bugs were left. It was all the fault of laziness and should be prevented in future.</p>
+<p>Anyway, the logic has been rewrittened with more careful examination and a functional test, which utilizes <code>request</code> to imitate HTTP requests and <code>cheerio</code> to manipulate HTML document in server side, has been added.</p>
+<h4 id="A_Severe_Potential_Bug">A Severe Potential Bug</h4><p>While I was doing the testing, I found out a potential danger of <code>Mongoose</code> searching. Usaully we do searching like <code>Model.find(conditions)</code> where <code>conditions</code> is a <code>Object</code> containing (key: value) pairs that we want our documents to match. However, if some value is <code>undefined</code>, that pair will be ignored. </p>
+<p>A very bad example:</p>
+<p>I want to search <code>{foo: bar}</code>, however, as <code>bar</code> is <code>undefined</code> it turns into <code>Model.find({})</code>, which will return every existing document of that collection.</p>
+<p>What a terrible thing! You can’t be careful enough to do the DB querys, and I’m filtering the Dashboard now. There is better none of this potential vulnerabilities.</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>This is just another week about bug-fixing and html template convertion, same trivial stuff like usual.</p>
+<p>I was mainly working on ge]]>
+    </summary>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/tags/GSoC2015/"/>
+    
+      <category term="Weekly-Blog" scheme="http://pages.plypy.com/tags/Weekly-Blog/"/>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/categories/GSoC2015/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[GSoC 2015 Week9]]></title>
+    <link href="http://pages.plypy.com/2015/07/25/GSoC-2015-Week9/"/>
+    <id>http://pages.plypy.com/2015/07/25/GSoC-2015-Week9/</id>
+    <published>2015-07-25T15:08:14.000Z</published>
+    <updated>2015-07-25T15:53:03.227Z</updated>
+    <content type="html"><![CDATA[<p>The restructuring work continues, this weeks I’ve mainly done some ending works of this, including:</p>
+<ul>
+<li><p>Refactoring modules related with <code>email-verification</code>. Email templates now share a common layout, <code>actionId</code> and <code>verifyId</code> are replaced by a single <code>uuid</code>, few variable names are updated and some packages as well.</p>
+</li>
+<li><p>Reorganizing admin page related things, rearrage the middlewares so other user-modules won’t bother privilege problems which makes things neat.</p>
+</li>
+<li>Updated modules to coform to new Dashboard.</li>
+<li>More…</li>
+</ul>
+<p>While I was doing the EJS 2 JADE works, I once again encountered a problem. Elliott had written this code below,
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#60;script type=&#34;text/javascript&#34;&#62;&#10;$(function() &#123;&#10;    var paramRow = function()&#123;&#10;        return &#39;&#60;tr&#62;&#60;% for (var j = 0; j &#60; columns.length; j++) &#123; %&#62;&#60;td&#62;&#39;&#10;            +&#39;&#60;input type=&#34;text&#34; class=&#34;&#60;%=columns[j].type%&#62;&#34; placeholder=&#34;&#60;%=columns[j].value%&#62;&#34; name=&#34;&#39;+($(&#39;#params tbody tr&#39;).length-1)+&#39;-&#60;%=columns[j].name%&#62;&#34;&#62;&#60;/td&#62;&#60;% &#125; %&#62;&#60;/tr&#62;&#39;;&#10;        &#125;;      &#10;/// more&#10;&#125;;&#10;&#60;/script&#62;</span><br></pre></td></tr></table></figure></p>
+<p>Basically it utilizes some code to generate the Javascript code that will be used in our pages, this section of Javascript would be a plain text block in JADE syntax. However, I can’t figure out how to iterate within a plain text block, which seems not to be a good idea. </p>
+<p>Having tried lots of ways and considered the concept of static compiling, my solution are,
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-&#10;  //- if only I could use jade.render in templates&#10;  var rowAdded = &#39;&#60;tr&#62;&#39;;&#10;  for (var j = 0; j &#60; settings.columns.length; ++j) &#123;&#10;    var col = settings.columns[j];&#10;    rowAdded += &#39;&#60;td&#62;&#39;;&#10;    rowAdded += &#39;&#60;input type=&#34;text&#34; class=&#34;&#39;+ col.type + &#39;&#34; &#39; +&#10;      &#39;placeholder=&#34;&#39; + col.value + &#39;&#34; &#39; +&#10;      &#39;name=&#34;&#123;&#123;index&#125;&#125;-&#39; + col.name + &#39;&#34;&#62;&#39;;&#10;    rowAdded += &#39;&#60;/td&#62;&#39;;&#10;  &#125;&#10;  rowAdded += &#39;&#60;/tr&#62;&#39;;&#10;//- script start&#10;script(type=&#39;text/javascript&#39;).&#10;  $(function() &#123;&#10;    var paramRow = function()&#123;&#10;      var index = $(&#39;#params tr&#39;).length-1;&#10;      //- unescaped&#10;      return  &#39;!&#123;rowAdded&#125;&#39;.replace(/&#123;&#123;index&#125;&#125;/g, index);&#10;    &#125;;&#10;  &#125;;&#10;  /// more</span><br></pre></td></tr></table></figure></p>
+<p>This is quiet ugly… but it’s the best solution I could get.</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>The restructuring work continues, this weeks I’ve mainly done some ending works of this, including:</p>
+<ul>
+<li><p>Refactoring modules r]]>
+    </summary>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/tags/GSoC2015/"/>
+    
+      <category term="Weekly-Blog" scheme="http://pages.plypy.com/tags/Weekly-Blog/"/>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/categories/GSoC2015/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[GSoC 2015 Week8]]></title>
+    <link href="http://pages.plypy.com/2015/07/19/GSoC-2015-Week8/"/>
+    <id>http://pages.plypy.com/2015/07/19/GSoC-2015-Week8/</id>
+    <published>2015-07-19T03:00:46.000Z</published>
+    <updated>2015-07-25T11:02:23.125Z</updated>
+    <content type="html"><![CDATA[<p>It’s a taxing week indeed, I’ve done lots of works, including:</p>
+<h3 id="EJS_to_JADE">EJS to JADE</h3><p>The EJS template engine is somehow outdated and lots of functions we’re utilizing in Dashboard currently is abandoned, like layouts and partials. Besides Dashboard hasn’t done well in segregation between views level and controller level, lots of html stuff are injected programatically, which makes things hard to maintain. So we’ve decided to convert EJS to JADE, and update other related stuff as well.</p>
+<p>Things like this are usually boring and taxing, however, we must accept the fact and conquer it.</p>
+<h3 id="Restructing_the_Project">Restructing the Project</h3><p>We used a system modules structure last year, trying to separate the routes logic to make things clearer. But rethinking it again, now I find the idea is very stupid, it hasn’t make things more clearer, but make the code more cumbersome. So I’ve taken this chance to remedy the errors I commited. The structure now mainly borrows Keysone’s, though we haven’t adopted its DB solution.</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>It’s a taxing week indeed, I’ve done lots of works, including:</p>
+<h3 id="EJS_to_JADE">EJS to JADE</h3><p>The EJS template engine is som]]>
+    </summary>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/tags/GSoC2015/"/>
+    
+      <category term="Weekly-Blog" scheme="http://pages.plypy.com/tags/Weekly-Blog/"/>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/categories/GSoC2015/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[GSoC 2015 Week7]]></title>
+    <link href="http://pages.plypy.com/2015/07/13/GSoC-2015-Week7/"/>
+    <id>http://pages.plypy.com/2015/07/13/GSoC-2015-Week7/</id>
+    <published>2015-07-12T17:06:42.000Z</published>
+    <updated>2015-07-25T11:02:23.125Z</updated>
+    <content type="html"><![CDATA[<p>Although the plans were usually fancy, reality is not sometimes. We were planning to embrace the Keystone.js in this year’s GSoC. It is me that proposed this as I’ve found out that Keystone.js is very easy for a quick development of Node.js centered project and made a small experiment in this<a href="https://github.com/Plypy/fairy" target="_blank" rel="external">repo</a>, and later found out that Keystone.js isn’t that fantastic as it first looks like. Like many open source project, it’s still in a very early stage and not suited for certain scenerios. </p>
+<p>In my experiments, I doubted once that the Keysone.js maybe have done too much on the Data level, where Keystone.js tried to wrap Mongoose to extend its functionlity, like providing pre-defined tags types and other things up on the top level of development, but hasn’t provided good documents. That time I thought that it’s not a big deal, just some small faults. But later in the development of Dashboard, through few days massing up I find that it’s even hard to define a Array of String, which hasn’t presented until very recent. </p>
+<p>The wrap it has done for Mongoose, in my opion, instead of extending it, but limited its flexibility. I really think that it has violated a principle, tools should be used as it should be. Mongoose is designed for flexible and stable data modeling, and focusing on it solely. But for now, if I want to use a custom data type in my model, I have to hope that Keystone has already provided it or patch this kind of type myown. It’s obviously not a good idea, IMHO, a good extension should work along with original tools not covering it.</p>
+<p>Anyways, we’ve abandoned Keystone’s DB solution officially. However, its folder structure is still worthy of referring.</p>
+<p>Above was all the big talk of the project. For works in detail: I’ve been working on updating the project entirely, and now on EJS to Jade with other view level transformation.</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>Although the plans were usually fancy, reality is not sometimes. We were planning to embrace the Keystone.js in this year’s GSoC. It is m]]>
+    </summary>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/tags/GSoC2015/"/>
+    
+      <category term="Weekly-Blog" scheme="http://pages.plypy.com/tags/Weekly-Blog/"/>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/categories/GSoC2015/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[GSoC 2015 Week6]]></title>
+    <link href="http://pages.plypy.com/2015/07/05/GSoC-2015-Week6/"/>
+    <id>http://pages.plypy.com/2015/07/05/GSoC-2015-Week6/</id>
+    <published>2015-07-05T00:49:08.000Z</published>
+    <updated>2015-07-25T11:02:23.125Z</updated>
+    <content type="html"><![CDATA[<p>… From the GSoC timeline showed on melange, I thought this week is used for resting… So shamefully, I haven’t done many things this week…</p>
+<p>The project is now appraching a important stage to improve embrace the <code>Keystone</code>. Though issue on JIRA said that it was used to simply replace <code>Formage</code>, there are lots of works besides this. It’s not simply a new admin panel, but a new project structure. The current one haven’t tackled the segragation well, many modules are strongly cohesive and the logic flow between sources is like a mess. Last year I’ve been focusing on minor-scale stuff, and this year on big pictures, just to make the Dashboard more maintainable and more easy to comprehend for future developers.</p>
+<p>Currently I was trying to add keystone the panel to Dashboard, however small problems were encountered. Here is a <a href="https://github.com/keystonejs/keystone/issues/1508" target="_blank" rel="external">issue</a> I opened.</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>… From the GSoC timeline showed on melange, I thought this week is used for resting… So shamefully, I haven’t done many things this week…]]>
+    </summary>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/tags/GSoC2015/"/>
+    
+      <category term="Weekly-Blog" scheme="http://pages.plypy.com/tags/Weekly-Blog/"/>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/categories/GSoC2015/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[GSoC 2015 Week5]]></title>
+    <link href="http://pages.plypy.com/2015/06/27/GSoC-2015-Week5/"/>
+    <id>http://pages.plypy.com/2015/06/27/GSoC-2015-Week5/</id>
+    <published>2015-06-27T02:35:04.000Z</published>
+    <updated>2015-07-25T11:02:23.125Z</updated>
+    <content type="html"><![CDATA[<p>It’s about the midterm evaluation. Things have been proceeding fine thus far. Like last year I’ve made a report and published <a href="https://talk.openmrs.org/t/gsoc-2015-openmrs-id-v2-1-platform-improvements-midterm-presentation/2261/7" target="_blank" rel="external">here</a>. It’s been kind of taxing to record it as my English isn’t very good and I haven’t fully recovered from pharyngitis. And sadly few days later, it got severer again… :/</p>
+<p>Besides the report, I’ve also mainly delivered:</p>
+<ul>
+<li>bug fixes for ID-89</li>
+<li>more work about ID-88</li>
+</ul>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>It’s about the midterm evaluation. Things have been proceeding fine thus far. Like last year I’ve made a report and published <a href="ht]]>
+    </summary>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/tags/GSoC2015/"/>
+    
+      <category term="Weekly-Blog" scheme="http://pages.plypy.com/tags/Weekly-Blog/"/>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/categories/GSoC2015/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[GSoC 2015 Week4]]></title>
+    <link href="http://pages.plypy.com/2015/06/20/GSoC-2015-Week4/"/>
+    <id>http://pages.plypy.com/2015/06/20/GSoC-2015-Week4/</id>
+    <published>2015-06-20T14:44:14.000Z</published>
+    <updated>2015-07-25T11:02:23.125Z</updated>
+    <content type="html"><![CDATA[<p>The biggest news for this week is that I’ve had my last final of this semster finished.</p>
+<p>Well… Not many works I’ve done due to dealing with those finals. However, as the good news suggests, I’ll have more time from now on to work on. Things will be better. The tough issue <a href="https://issues.openmrs.org/browse/ID-103" target="_blank" rel="external">ID-103</a> is still ahead of me.</p>
+<h3 id="Done">Done</h3><ul>
+<li><p>After lots of discussion… I’ve fixed this <a href="https://talk.openmrs.org/t/lots-of-ldap-errors-with-email-verification-process-in-past-few-days/1951" target="_blank" rel="external">LDAP issue</a> reported by Michael. Something related with LDAP was wrong, but I don’t know where it is. However, I’m pretty sure, it shouldn’t be Dashboard’s fault form the log file.</p>
+</li>
+<li><p>Discussed other issues and future works</p>
+</li>
+</ul>
+<h2 id="ToDo">ToDo</h2><ul>
+<li>ID-88, Replace MySQL legacy stuff.</li>
+</ul>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>The biggest news for this week is that I’ve had my last final of this semster finished.</p>
+<p>Well… Not many works I’ve done due to deal]]>
+    </summary>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/tags/GSoC2015/"/>
+    
+      <category term="Weekly-Blog" scheme="http://pages.plypy.com/tags/Weekly-Blog/"/>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/categories/GSoC2015/"/>
+    
+  </entry>
+  
+</feed>
