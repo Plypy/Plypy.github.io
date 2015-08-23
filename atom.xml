@@ -4,7 +4,7 @@
   
   <link href="/atom.xml" rel="self"/>
   <link href="http://pages.plypy.com/"/>
-  <updated>2015-08-16T01:19:35.128Z</updated>
+  <updated>2015-08-23T15:47:20.220Z</updated>
   <id>http://pages.plypy.com/</id>
   
   <author>
@@ -13,6 +13,28 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title><![CDATA[About to End, Again, Again]]></title>
+    <link href="http://pages.plypy.com/2015/08/23/About-to-End-Again-Again/"/>
+    <id>http://pages.plypy.com/2015/08/23/About-to-End-Again-Again/</id>
+    <published>2015-08-23T15:22:24.000Z</published>
+    <updated>2015-08-23T15:47:20.220Z</updated>
+    <content type="html"><![CDATA[<p>Based on last year’s blogs, I posted last week’s “final post”. Well, you can’t decide when to end. Based on the weekly feedback notification email, I have to write my weekly posts 13.  =_=</p>
+<p>Anyway, not a big deal, all I need to do is brag more about the Dashboard with Robby. See, I’ve already written about 100 words and still writting. (I watched <em>The Avengers: Age of Ultron</em>. The line “I’m out of my words”, Thor said while he is holding against Ultron, is really funny.)</p>
+<p>It’s been a productive and funny week, and especially the weekend. I delivered my final documentation PR and put a full stop of this year’s GSoC. Though GSoC is over, the project will still go along. I’ll work on Dashboard in my leisure time to make it better, fix those small bugs at least.</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>Based on last year’s blogs, I posted last week’s “final post”. Well, you can’t decide when to end. Based on the weekly feedback notificat]]>
+    </summary>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/tags/GSoC2015/"/>
+    
+      <category term="Weekly-Blog" scheme="http://pages.plypy.com/tags/Weekly-Blog/"/>
+    
+      <category term="GSoC2015" scheme="http://pages.plypy.com/categories/GSoC2015/"/>
+    
+  </entry>
   
   <entry>
     <title><![CDATA[About to End, Again]]></title>
@@ -229,37 +251,6 @@
 ]]></content>
     <summary type="html">
     <![CDATA[<p>It’s about the midterm evaluation. Things have been proceeding fine thus far. Like last year I’ve made a report and published <a href="ht]]>
-    </summary>
-    
-      <category term="GSoC2015" scheme="http://pages.plypy.com/tags/GSoC2015/"/>
-    
-      <category term="Weekly-Blog" scheme="http://pages.plypy.com/tags/Weekly-Blog/"/>
-    
-      <category term="GSoC2015" scheme="http://pages.plypy.com/categories/GSoC2015/"/>
-    
-  </entry>
-  
-  <entry>
-    <title><![CDATA[GSoC 2015 Week4]]></title>
-    <link href="http://pages.plypy.com/2015/06/20/GSoC-2015-Week4/"/>
-    <id>http://pages.plypy.com/2015/06/20/GSoC-2015-Week4/</id>
-    <published>2015-06-20T14:44:14.000Z</published>
-    <updated>2015-07-25T11:02:23.125Z</updated>
-    <content type="html"><![CDATA[<p>The biggest news for this week is that I’ve had my last final of this semster finished.</p>
-<p>Well… Not many works I’ve done due to dealing with those finals. However, as the good news suggests, I’ll have more time from now on to work on. Things will be better. The tough issue <a href="https://issues.openmrs.org/browse/ID-103" target="_blank" rel="external">ID-103</a> is still ahead of me.</p>
-<h3 id="Done">Done</h3><ul>
-<li><p>After lots of discussion… I’ve fixed this <a href="https://talk.openmrs.org/t/lots-of-ldap-errors-with-email-verification-process-in-past-few-days/1951" target="_blank" rel="external">LDAP issue</a> reported by Michael. Something related with LDAP was wrong, but I don’t know where it is. However, I’m pretty sure, it shouldn’t be Dashboard’s fault form the log file.</p>
-</li>
-<li><p>Discussed other issues and future works</p>
-</li>
-</ul>
-<h2 id="ToDo">ToDo</h2><ul>
-<li>ID-88, Replace MySQL legacy stuff.</li>
-</ul>
-]]></content>
-    <summary type="html">
-    <![CDATA[<p>The biggest news for this week is that I’ve had my last final of this semster finished.</p>
-<p>Well… Not many works I’ve done due to deal]]>
     </summary>
     
       <category term="GSoC2015" scheme="http://pages.plypy.com/tags/GSoC2015/"/>

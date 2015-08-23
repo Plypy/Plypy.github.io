@@ -49,6 +49,58 @@
     <header>
       
         <div class="icon"></div>
+        <time datetime="2014-05-24T07:24:21.000Z"><a href="/2014/05/24/the-first-week-of-gsoc/">May 24 2014</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2014/05/24/the-first-week-of-gsoc/">The First Week of GSoC</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>So ended the first week of GSoC2014. It’s been exciting and funny, though there is some exam pressure on me :/ </p>
+<h2 id="What_I_Have_Done">What I Have Done</h2><hr>
+<h3 id="Refactoring">Refactoring</h3><p>I’ve broken the routing strategies into small pieces of files. Instead of placing all routes in <code>app.js</code>, now each router is placed in its own files
+. E.G. <code>get(/login)</code> and <code>post(/login)</code> is placed under <code>login.js</code>. Above that there is an <code>index.js</code> requires all those files.</p>
+<p>Besides these files were put into different modules as well, different module handle different business, and they are independent from each other. I’m trying to keep to make everything a module. Nevertheless some basic router were kept by the main project.</p>
+<p>So now the whole are structure like these,
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">app.js                    # requires all modules specified <span class="keyword">in</span> conf.js, and the router folder</span><br><span class="line">routes</span><br><span class="line">| index.js                # requires router file</span><br><span class="line">| login.js    </span><br><span class="line">| logout.js  </span><br><span class="line">modules</span><br><span class="line">| index.js                # requires lib</span><br><span class="line">| lib                    </span><br><span class="line">| | index.js              # requires routes and controller</span><br><span class="line">| | routes                # organized <span class="keyword">as</span> the former one</span><br><span class="line">| | | ...</span><br></pre></td></tr></table></figure></p>
+<h3 id="Setteled_the_disagreement_on_code_style">Setteled the disagreement on code style</h3><p>We now officially adopted the <a href="http://nodeguide.com/style.html" target="_blank" rel="external">Felix’s</a> as the project’s code style standard. Due to some historical problems, there isn’t, at least for javascript, a code convention for OpenMRS. So maybe in the future, we’ll have our own formal code convention as well :D</p>
+<p>For the sake of efficiency. I’m now using <a href="https://sublime.wbond.net/packages/SublimeLinter" target="_blank" rel="external">SublimeLinter</a> to detect the potential problems and <a href="https://sublime.wbond.net/packages/JsFormat" target="_blank" rel="external">JsFormat</a> to format my code.</p>
+<p>However, in the process of refactoring, I had to be very very careful. Cause this project is somehow lack of unit testing. That’s to say, another to-do added on the list. Bonjour <a href="http://visionmedia.github.io/mocha/" target="_blank" rel="external">Mocha</a>.</p>
+<h2 id="What_I_Will_Do">What I Will Do</h2><hr>
+<p>I think I’ll stick to my old plan, thus:</p>
+<ol>
+<li>Continue the refactoring work, move different views into their respective modules.</li>
+<li>Clean-up a step further.</li>
+<li>Learning the db stuff, starting to make some beta designs.</li>
+<li>Completing the issue-tracking page.</li>
+</ol>
+<p>Be hardworking, and be active on community. </p>
+<p>All for delivering the best work!</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
         <time datetime="2014-05-14T13:16:06.000Z"><a href="/2014/05/14/openldap-problem/">May 14 2014</a></time>
       
       
@@ -268,7 +320,7 @@
   
     <li><a href="/categories/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>13</small></li>
+    <li><a href="/categories/GSoC2015/">GSoC2015</a><small>14</small></li>
   
     <li><a href="/categories/LerningNotes/">LerningNotes</a><small>5</small></li>
   
@@ -289,7 +341,7 @@
   
     <li><a href="/tags/GSoC2014/">GSoC2014</a><small>16</small></li>
   
-    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>13</small></li>
+    <li><a href="/tags/GSoC2015/">GSoC2015</a><small>14</small></li>
   
     <li><a href="/tags/Linux-Kernel-Compiling/">Linux Kernel Compiling</a><small>3</small></li>
   
@@ -309,7 +361,7 @@
   
     <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
   
-    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>26</small></li>
+    <li><a href="/tags/Weekly-Blog/">Weekly-Blog</a><small>27</small></li>
   
     <li><a href="/tags/assembly/">assembly</a><small>1</small></li>
   
